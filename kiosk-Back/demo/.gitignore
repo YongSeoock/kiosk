@@ -1,0 +1,24 @@
+# Properties 파일 (비밀번호 포함)
+src/main/resources/application.properties
+src/main/resources/application-*.properties
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# 빌드 결과물
+target/
+/target/
+*.class
+*.jar
+
+# 로그
+*.log
+logs/
+
+# 임시 파일
+.DS_Store
+*.tmp
