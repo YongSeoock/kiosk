@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import './App.css';
+import './kioskMain.css';
 
 function App() {
   // === 상태 관리 구역 (useState) ===
@@ -171,8 +171,19 @@ function App() {
           menus.map(menu => (
             <div key={menu.id} className="menu-card">
               <div className="menu-info">
+                
+                {/* 1. 현재 변수명인 'menu'에 맞춰 이미지 태그 삽입 */}
+                <div className="menu-image-container">
+                  <img 
+                    src={menu.imageUrl ? `/menu-image/${menu.imageUrl}` : '/menu-image/default.jpg'} 
+                    alt={menu.name} 
+                    className="menu-image" 
+                    onError={(e) => { e.target.src = '/menu-image/default.jpg'; }} // 이미지 로딩 실패 시 기본 이미지로 대체
+                  />
+                </div>
+
                 <strong className="menu-name">{menu.name}</strong> <br />
-                <span className="menu-price">{menu.price}원</span>
+                <span className="menu-price">{menu.price.toLocaleString()}원</span> {/* 가격 콤마 표시 기능 추가 */}
               </div>
               <button onClick={() => openOptionModal(menu)} className="btn-primary">담기</button>
             </div>
@@ -229,7 +240,7 @@ function App() {
       <div className="cart-section">
         <div className="cart-header">
           <h2 className="cart-title">🛒 장바구니</h2>
-          <button onClick={ClearCart} disabled={cart.length === 0} className="btn-clear-cart" style={{ backgroundColor: cart.length === 0 ? '#ddd' : '#ff4d4f', cursor: cart.length === 0 ? 'not-allowed' : 'pointer' }}>전체 비우기</button>
+          <button onClick={ClearCart} disabled={cart.length === 0} className="btn-clear-cart" style={{ backgroundColor: cart.length === 0 ? '#ddd' : '#ff4d4f', color: cart.length === 0 ? '#adb5bd' : '#ffffff',cursor: cart.length === 0 ? 'not-allowed' : 'pointer' }}>전체 비우기</button>
         </div>
 
         {cart.length === 0 ? <p className="cart-empty-text">선택한 메뉴가 없습니다.</p> : (
@@ -244,10 +255,10 @@ function App() {
                     {item.addOptions.map(o => `• ${o.name} ${o.count}개`).join(' ')}
                   </div>
                 </div>
-                <div className="cart-item-right">
-                  <button onClick={() => decreaseCount(item)} className="btn-minus">-</button>
-                  <span className="item-count-badge">{item.count}개</span>
-                  <button onClick={() => increaseCount(item)} className="btn-minus">+</button>
+                <div className="counter-group">
+                  <button onClick={() => decreaseCount(item)} className="btn-counter">-</button>
+                  <span className="counter-value">{item.count}개</span>
+                  <button onClick={() => increaseCount(item)} className="btn-counter">+</button>
                 </div>
               </li>
             ))}

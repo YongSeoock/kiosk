@@ -17,6 +17,7 @@ public class Menu {
     private String name;
     private int price;
     private String category; 
+    private String imageUrl;
 
     @Column(name = "is_new")
     private boolean isNew; 
@@ -29,11 +30,12 @@ public class Menu {
     }
 
     // 초기 데이터용 생성자
-    public Menu(String name, int price, String category, boolean isNew) {
+    public Menu(String name, int price, String category, boolean isNew, String imageUrl) {
         this.name = name;
         this.price = price;
         this.category = category; 
         this.isNew = isNew; 
+        this.imageUrl = imageUrl; 
     }
     
 }

@@ -10,12 +10,15 @@ public class MenuResponseDto {
     private Long id;
     private String name;
     private int price;
-    private List<OptionDto> options; // 무한루프 유발하는 중간테이블 대신 진짜 옵션 정보만 쏙!
+    private String imageUrl; // 👈 1. 이미지 URL 필드 추가
+    private List<OptionDto> options;
 
     public MenuResponseDto(Menu menu) {
         this.id = menu.getId();
         this.name = menu.getName();
         this.price = menu.getPrice();
+        this.imageUrl = menu.getImageUrl(); // 👈 2. 생성자에서 Entity 데이터 매핑
+        
         // 무한 루프를 끊어내고 진짜 옵션 알맹이만 추출하는 마법
         this.options = menu.getMenuOptions().stream()
                 .map(menuOption -> new OptionDto(menuOption.getProductOption()))
@@ -26,6 +29,7 @@ public class MenuResponseDto {
     public Long getId() { return id; }
     public String getName() { return name; }
     public int getPrice() { return price; }
+    public String getImageUrl() { return imageUrl; } // 👈 3. Getter 추가
     public List<OptionDto> getOptions() { return options; }
 
     // 내부용 옵션 박스
