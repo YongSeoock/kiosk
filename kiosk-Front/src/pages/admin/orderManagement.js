@@ -1,0 +1,95 @@
+import React, { useState, useEffect } from 'react';
+import './orderManagement.css';
+
+function OrderManagement() {
+  const [orders, setOrders] = useState([]);
+
+  // 컴포넌트가 열리면 주문 데이터 로드
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = () => {
+    fetch('http://localhost:8080/api/orders')
+      .then(res => res.json())
+      .then(data => {
+        console.log("실제 서버에서 받아온 데이터:", data);
+        if (Array.isArray(data)) setOrders(data);
+      })
+      .catch(err => console.error("주문 목록 로딩 실패:", err));
+  };
+
+  const handleCompleteOrder = (orderId) => {
+    if (!window.confirm(`${orderId}번 주문을 제조 완료 처리하시겠습니까?`)) return;
+
+    fetch(`http://localhost:8080/api/orders/${orderId}/complete`, {
+      method: 'POST',
+    })
+    .then(res => {
+      if (res.ok) {
+        alert(`🔔 ${orderId}번 주문 제조가 완료되었습니다!`);
+        fetchOrders(); // 목록 새로고침
+      } else {
+        alert("주문 처리 중 오류가 발생했습니다.");
+      }
+    })
+    .catch(err => console.error("주문 완료 요청 실패:", err));
+  };
+
+  return (
+    <div>
+      <div className="orders-header">
+        <h2>📋 실시간 주문 수신 현황</h2>
+        <button onClick={fetchOrders} className="btn-refresh">🔄 새로고침</button>
+      </div>
+      
+      <div className="orders-grid">
+        {orders.length === 0 ? (
+          <p className="no-orders">현재 대기 중인 주문이 없습니다.</p>
+        ) : (
+          orders.map(order => (
+            <div key={order.id} className="order-card">
+              <div className="order-card-header">
+                <span className="order-number">주문 번호: {order.id}번</span>
+              </div>
+              
+              <div className="order-card-body">
+                <ul className="order-items-list">
+                  {/* 🌟 백엔드 DTO 명칭인 orderItems로 매핑 */}
+                  {order.orderItems?.map((item, idx) => (
+                    <li key={idx} className="order-item-detail">
+                      <div className="item-name-qty">
+                        {/* 🌟 백엔드 DTO 명칭인 menuName과 quantity 사용 */}
+                        <strong>{item.menuName}</strong> x {item.quantity}개
+                      </div>
+                      {/* 🌟 옵션이 단순 문자열이므로 .map() 없이 바로 출력 */}
+                      {item.options && (
+                        <div className="item-options-desc">
+                          • {item.options}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                <div className="order-total-price">
+                  총 결제 금액: <strong>{order.totalPrice?.toLocaleString()}원</strong>
+                </div>
+              </div>
+              
+              <div className="order-card-footer">
+                <button 
+                  onClick={() => handleCompleteOrder(order.id)} 
+                  className="btn-complete"
+                >
+                  ✅ 제조 완료
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default OrderManagement;

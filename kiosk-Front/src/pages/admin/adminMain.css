@@ -1,0 +1,64 @@
+/* 전체 컨테이너 */
+.admin-container {
+  padding: 30px;
+  font-family: 'Noto Sans KR', sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* 헤더 구역 */
+.admin-header {
+  border-bottom: 2px solid #333;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.admin-header h1 {
+  margin: 0;
+  color: #222;
+}
+
+.admin-header p {
+  color: #666;
+  margin: 5px 0 0 0;
+}
+
+/* 탭 네비게이션 */
+.admin-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+/* 기본 탭 버튼 스타일 */
+.tab-btn {
+  padding: 10px 20px;
+  font-size: 15px;
+  border: 1px solid #ddd;
+  background-color: #f8f9fa;
+  color: #333;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+  background-color: #e9ecef;
+}
+
+/* 활성화된 탭 버튼 스타일 */
+.tab-btn.active {
+  font-weight: bold;
+  background-color: #007bff;
+  color: #fff;
+  border-color: #007bff;
+}
+
+/* 콘텐츠 출력 구역 */
+.admin-content {
+  background: #f9f9f9;
+  padding: 25px;
+  border-radius: 8px;
+  border: 1px solid #eee;
+  min-height: 400px;
+}

@@ -1,16 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-
-// 👤 src/pages/user 폴더 안의 파일들을 정확히 바라보도록 수정했습니다.
-import App from './pages/user/kioskMain'; 
-import reportWebVitals from './pages/user/reportWebVitals';
+import AppRouter from './Router'; // 🌟 App 대신 Router를 가져옵니다.
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <AppRouter /> {/* 🌟 여기를 <AppRouter />로 교체합니다. */}
   </React.StrictMode>
 );
-
-reportWebVitals();

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import './kioskMain.css';
 
-function App() {
+function KioskMain() {
   // === 상태 관리 구역 (useState) ===
   const [menus, setMenus] = useState([]);
   const [cart, setCart] = useState([]);
@@ -308,4 +308,4 @@ function App() {
   );
 }
 
-export default App;
+export default KioskMain;
