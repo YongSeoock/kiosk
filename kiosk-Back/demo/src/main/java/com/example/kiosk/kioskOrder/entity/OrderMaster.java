@@ -19,4 +19,19 @@ public class OrderMaster {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now(); // 주문 시간 자동 입력
+
+    public String getOrderDate() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getOrderDate'");
+    }
+
+    public String getName() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getName'");
+    }
+
+    public String getOptions() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getOptions'");
+    }
 }

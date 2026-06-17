@@ -10,14 +10,13 @@ function KioskMain() {
   const [chosenAdds, setChosenAdds] = useState({});
   const [receipt, setReceipt] = useState(null); 
 
-  // 🌟 [NEW] 현재 선택된 카테고리 상태 추가 (기본값: '전체')
+  // 현재 선택된 카테고리 상태 추가 (기본값: '전체')
   const [currentCategory, setCurrentCategory] = useState('전체');
 
   // 카테고리 탭 리스트 정의
   const categories = ['전체', '신메뉴', '커피', '음료', '디저트'];
 
   // === 서버 연동 구역 ===
-  // 🌟 [수정] currentCategory가 변경될 때마다 서버에 해당 카테고리 데이터를 요청합니다.
   useEffect(() => {
     fetch(`http://localhost:8080/api/menus?category=${currentCategory}`)
       .then(response => response.json())
@@ -27,6 +26,9 @@ function KioskMain() {
 
   // === 기능 함수 구역 (Methods) ===
   const openOptionModal = (menu) => {
+    // 🌟 [추가] 품절된 메뉴인 경우 모달창이 열리지 않도록 사전 차단
+    if (menu.isSoldOut) return; 
+
     setSelectedMenu(menu);
     const iceOptions = menu.options?.filter(o => o.category === "ICE") || [];
     setChosenIce(iceOptions.length > 0 ? iceOptions[0] : null);
@@ -134,7 +136,6 @@ function KioskMain() {
 
   const totalAmount = cart.reduce((sum, item) => sum + (item.singlePrice * item.count), 0);
 
-  {/* 메뉴판 구역 이모지 */}
   const categoryIcons = {
     '전체': '✨',
     '신메뉴': '🆕',
@@ -147,8 +148,7 @@ function KioskMain() {
     <div className="kiosk-container">
       <h1 className="kiosk-title">🏪 카페 키오스크</h1>
 
-      
-      {/* 🌟 [NEW] 카테고리 탭 버튼 구역 */}
+      {/* 카테고리 탭 버튼 구역 */}
       <div className="category-tabs">
         {categories.map(tab => (
           <button 
@@ -169,23 +169,38 @@ function KioskMain() {
       <div className="menu-grid">
         {Array.isArray(menus) && menus.length > 0 ? (
           menus.map(menu => (
-            <div key={menu.id} className="menu-card">
+            /* 🌟 [수정] menu.isSoldOut이 true인 경우 카드 전체에 disabled 클래스 부여 */
+            <div key={menu.id} className={`menu-card ${menu.isSoldOut ? 'disabled' : ''}`}>
               <div className="menu-info">
-                
-                {/* 1. 현재 변수명인 'menu'에 맞춰 이미지 태그 삽입 */}
-                <div className="menu-image-container">
+                <div className="menu-image-container" style={{ position: 'relative' }}>
+                  
+                  {/* 🌟 [추가] 품절 상태일 때 이미지 위를 덮을 반투명 마스크 레이어 */}
+                  {menu.isSoldOut && (
+                    <div className="sold-out-overlay">
+                      <span>품절</span>
+                    </div>
+                  )}
+
                   <img 
                     src={menu.imageUrl ? `/menu-image/${menu.imageUrl}` : '/menu-image/default.jpg'} 
                     alt={menu.name} 
                     className="menu-image" 
-                    onError={(e) => { e.target.src = '/menu-image/default.jpg'; }} // 이미지 로딩 실패 시 기본 이미지로 대체
+                    onError={(e) => { e.target.src = '/menu-image/default.jpg'; }} 
                   />
                 </div>
 
                 <strong className="menu-name">{menu.name}</strong> <br />
-                <span className="menu-price">{menu.price.toLocaleString()}원</span> {/* 가격 콤마 표시 기능 추가 */}
+                <span className="menu-price">{menu.price.toLocaleString()}원</span>
               </div>
-              <button onClick={() => openOptionModal(menu)} className="btn-primary">담기</button>
+              
+              {/* 🌟 [수정] 품절인 경우 버튼을 비활성화(disabled) 처리 */}
+              <button 
+                onClick={() => openOptionModal(menu)} 
+                className="btn-primary"
+                disabled={menu.isSoldOut}
+              >
+                {menu.isSoldOut ? '품절' : '담기'}
+              </button>
             </div>
           ))
         ) : (

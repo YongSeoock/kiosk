@@ -7,4 +7,6 @@ import com.example.kiosk.kioskOrder.entity.OrderMaster;
 
 @Repository
 public interface OrderMasterRepository extends JpaRepository<OrderMaster, Long> {
+    
 }
+
