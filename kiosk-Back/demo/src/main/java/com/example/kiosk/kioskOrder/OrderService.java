@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -77,6 +76,20 @@ public class OrderService {
                                 OrderResponseDto.OrderDetailDto detailDto = new OrderResponseDto.OrderDetailDto();
                                 detailDto.setQuantity(part.getQuantity());
                                 
+                                //주문 메뉴 가격 가져오기
+                                menuRepository.findById(part.getMenuId()).ifPresent(menu -> {
+                                    detailDto.setMenuName(menu.getName());
+                                    detailDto.setPrice(menu.getPrice());        // 👈 DB의 진짜 가격을 세팅!
+                                    detailDto.setCategory(menu.getCategory());  // 🌟 DB에서 카테고리를 가져와 세팅!
+                                });
+
+                                // 데이터가 없을 때를 위한 안전장치
+                                if (detailDto.getMenuName() == null) {
+                                    detailDto.setMenuName("알 수 없는 메뉴(ID:" + part.getMenuId() + ")");
+                                    detailDto.setPrice(0);
+                                    detailDto.setCategory("기타");
+                                }
+
                                 // [메뉴명 매핑] menuRepository를 사용해 진짜 메뉴 이름을 찾아옵니다.
                                 String realMenuName = menuRepository.findById(part.getMenuId())
                                         .map(menu -> menu.getName()) 

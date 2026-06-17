@@ -16,9 +16,9 @@ function AdminMain() {
 
       {/* 탭 버튼 네비게이션 */}
       <nav className="admin-tabs">
-        <button onClick={() => setActiveTab('orders')} className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`}>📋 실시간 주문 관리</button>
-        <button onClick={() => setActiveTab('menus')} className={`tab-btn ${activeTab === 'menus' ? 'active' : ''}`}>☕ 메뉴 관리</button>
-        <button onClick={() => setActiveTab('dashboard')} className={`tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`}>📊 매출 통계 리포트</button>
+        <button onClick={() => setActiveTab('orders')} className={`category-btn ${activeTab === 'orders' ? 'active' : ''}`}>📋 실시간 주문 관리</button>
+        <button onClick={() => setActiveTab('menus')} className={`category-btn ${activeTab === 'menus' ? 'active' : ''}`}>☕ 메뉴 관리</button>
+        <button onClick={() => setActiveTab('dashboard')} className={`category-btn ${activeTab === 'dashboard' ? 'active' : ''}`}>📊 매출 통계 리포트</button>
       </nav>
 
       {/* 🌟 탭 내용 구역: 각 파일에서 컴포넌트를 조립식으로 끼워 넣음 */}

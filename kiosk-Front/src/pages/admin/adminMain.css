@@ -31,7 +31,7 @@
 }
 
 /* 기본 탭 버튼 스타일 */
-.tab-btn {
+.category-btn {
   padding: 10px 20px;
   font-size: 15px;
   border: 1px solid #ddd;
@@ -42,12 +42,12 @@
   transition: all 0.2s ease;
 }
 
-.tab-btn:hover {
+.category-btn:hover {
   background-color: #e9ecef;
 }
 
 /* 활성화된 탭 버튼 스타일 */
-.tab-btn.active {
+.category-btn.active {
   font-weight: bold;
   background-color: #007bff;
   color: #fff;

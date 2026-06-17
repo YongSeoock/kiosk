@@ -1,0 +1,169 @@
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.kpi-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.kpi-card--best {
+  border-left: 4px solid #22c55e;
+}
+
+.kpi-label {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.kpi-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.kpi-sub {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+@media (max-width: 768px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* DashboardReport.css */
+
+.report-container {
+    padding: 24px;
+    background-color: #f8f9fa;
+}
+
+/* 테이블 구역 제목 */
+h3 {
+    font-size: 1.2rem;
+    color: #333;
+    margin-top: 32px;
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
+/* 테이블 카드 배치 */
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+}
+
+/* 헤더 스타일 */
+.report-table th {
+    background-color: #f1f3f5;
+    color: #495057;
+    font-weight: 600;
+    padding: 14px 16px;
+    font-size: 14px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+/* 데이터 셀 스타일 */
+.report-table td {
+    padding: 14px 16px;
+    color: #495057;
+    font-size: 14px;
+    border-bottom: 1px solid #dee2e6;
+    vertical-align: middle;
+}
+
+/* 마우스 호버 시 행 강조 */
+.report-table tbody tr:hover {
+    background-color: #f8f9fa;
+    transition: background-color 0.2s ease;
+}
+
+/* 마지막 행은 밑줄 제거 */
+.report-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* 열 정렬 최적화 (★가장 중요) */
+.report-table th:nth-child(1), .report-table td:nth-child(1) {
+    text-align: center; /* 순위 정렬 */
+    width: 80px;
+    font-weight: bold;
+    color: #868e96;
+}
+
+.report-table th:nth-child(2), .report-table td:nth-child(2) {
+    text-align: center; /* 카테고리 정렬 */
+    font-weight: 500;
+    color: #212529;
+}
+
+.report-table th:nth-child(3), .report-table td:nth-child(3) {
+    text-align: center; /* 메뉴명 정렬 */
+    padding-right: 24px;
+}
+
+.report-table th:nth-child(4), .report-table td:nth-child(4) {
+    text-align: center; /* 판매 수량 정렬 */
+    padding-right: 24px;
+    font-weight: 500;
+}
+ㄴ
+.report-table th:nth-child(5), .report-table td:nth-child(5) {
+    text-align: center; /* 매출액 정렬 */
+    padding-right: 24px;
+    font-weight: 500;
+}
+
+/* 테이블 상단 헤더 구역 (양 끝 배치가 아닌 왼쪽 정렬로 변경) */
+.section-header {
+    display: flex;
+    flex-direction: column; /* 제목과 탭을 위아래로 배치 */
+    align-items: flex-start; /* 왼쪽 정렬 */
+    gap: 12px; /* 제목과 탭 사이 간격 */
+    margin-top: 32px;
+    margin-bottom: 1px;
+}
+
+.section-header h3 {
+    margin: 0;
+}
+
+/* 🌟 카테고리 버튼 크기 및 폰트 축소 */
+.tab-btn {
+    padding: 4px 16px; /* 위아래, 좌우 여백을 줄여 크기 축소 */
+    border: 1px solid #dee2e6;
+    background-color: #fff;
+    border-radius: 8px; /* 크기가 줄어든 만큼 라운드 값 조절 */
+    cursor: pointer;
+    font-size: 13px; /* 글자 크기 축소 */
+    color: #495057;
+    transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+    background-color: #f1f3f5;
+}
+
+.tab-btn.active {
+    background-color: #0088FE;
+    color: #fff;
+    border-color: #0088FE;
+    font-weight: 500;
+}
