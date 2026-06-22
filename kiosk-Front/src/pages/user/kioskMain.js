@@ -158,7 +158,7 @@ function KioskMain() {
     // 나중에 메인으로 돌아와서 띄워줄 영수증 미리 세션에 백업
     sessionStorage.setItem(generatedOrderId, JSON.stringify({ orderData, receiptItems, totalAmount }));
 
-    // 토스 창을 띄우지 않고 가짜 데이터와 함께 바로 success로 이동
+    // 결제 성공 화면 호출
     //const fakePaymentKey = "fake_payment_key_" + new Date().getTime();
     //window.location.href = `/success?paymentKey=${fakePaymentKey}&orderId=${generatedOrderId}&amount=${totalAmount}`;
 
@@ -186,6 +186,7 @@ function KioskMain() {
       });
     } catch (error) {
       alert(error.message);
+
       // 결제 실패 화면 호출
       //window.location.href = `/fail?code=${error.code}&message=${encodeURIComponent(error.message)}`;
     }
@@ -201,7 +202,7 @@ function KioskMain() {
 
   return (
     <div className="kiosk-container">
-      <h1 className="kiosk-title">🏪 카페 키오스크</h1>
+      <h1 className="kiosk-title">카페 키오스크</h1>
 
       {/* 카테고리 탭 버튼 구역 */}
       <div className="category-tabs">
@@ -303,7 +304,7 @@ function KioskMain() {
       {/* 장바구니 구역 */}
       <div className="cart-section">
         <div className="cart-header">
-          <h2 className="cart-title">🛒 장바구니</h2>
+          <h2 className="cart-title">장바구니</h2>
           <button onClick={ClearCart} disabled={cart.length === 0} className="btn-clear-cart" style={{ backgroundColor: cart.length === 0 ? '#ddd' : '#ff4d4f', color: cart.length === 0 ? '#adb5bd' : '#ffffff',cursor: cart.length === 0 ? 'not-allowed' : 'pointer' }}>전체 비우기</button>
         </div>
 
