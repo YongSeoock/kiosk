@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './kioskMain.css';
+import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
 
 function KioskMain() {
   // === 상태 관리 구역 (useState) ===
@@ -10,13 +11,18 @@ function KioskMain() {
   const [chosenAdds, setChosenAdds] = useState({});
   const [receipt, setReceipt] = useState(null); 
 
+  // 토스 결제 인스턴스 상태 관리
+  const clientKey = "test_ck_nRQoOaPz8LL2N6nEbaPe8y47BMw6";
+  const customerKey = "PwnwqzG6BnQZDh0882bU5";
+  const [payment, setPayment] = useState(null);
+
   // 현재 선택된 카테고리 상태 추가 (기본값: '전체')
   const [currentCategory, setCurrentCategory] = useState('전체');
 
   // 카테고리 탭 리스트 정의
   const categories = ['전체', '신메뉴', '커피', '음료', '디저트'];
 
-  // === 서버 연동 구역 ===
+  // === 메뉴 데이터 로드 ===
   useEffect(() => {
     fetch(`http://localhost:8080/api/menus?category=${currentCategory}`)
       .then(response => response.json())
@@ -24,9 +30,42 @@ function KioskMain() {
       .catch(err => console.error("서버 연결 실패 :", err));
   }, [currentCategory]);
 
+  // === 토스 SDK 초기화 ===
+  useEffect(() => {
+    async function initToss() {
+      try {
+        const tossPayments = await loadTossPayments(clientKey);
+        const paymentInstance = tossPayments.payment({ customerKey });
+        setPayment(paymentInstance);
+      } catch (error) {
+        console.error("토스 SDK 초기화 실패:", error);
+      }
+    }
+    initToss();
+  }, []);
+
+  // === 🌟 [수정] 결제가 완료되어 Success 페이지에서 복귀했는지 체크하는 장치 ===
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const isFinished = searchParams.get("paymentFinished");
+    const orderId = searchParams.get("orderId");
+
+    // 결제가 무사히 끝나고 복귀했다면 로컬 스토리지에 백업해둔 영수증 정보를 꺼내서 모달 띄우기!
+    if (isFinished === "true" && orderId) {
+      const savedReceipt = JSON.parse(localStorage.getItem(`receipt_${orderId}`));
+      if (savedReceipt) {
+        setReceipt(savedReceipt);
+        setCart([]); // 장바구니 비우기
+        
+        // 주소창 깔끔하게 청소 (?paymentFinished=true 제거)
+        window.history.replaceState({}, document.title, window.location.pathname);
+        localStorage.removeItem(`receipt_${orderId}`);
+      }
+    }
+  }, []);
+
   // === 기능 함수 구역 (Methods) ===
   const openOptionModal = (menu) => {
-    // 🌟 [추가] 품절된 메뉴인 경우 모달창이 열리지 않도록 사전 차단
     if (menu.isSoldOut) return; 
 
     setSelectedMenu(menu);
@@ -85,18 +124,19 @@ function KioskMain() {
       setCart(cart.map(c => c.id === item.id ? { ...c, count: c.count + 1 } : c));
   };
 
-  const handleCheckout = () => {
-    if (cart.length === 0) {
-      alert("장바구니가 비어 있습니다.");
+  const totalAmount = cart.reduce((sum, item) => sum + (item.singlePrice * item.count), 0);
+
+  // === 🌟 [수정] 표준 리다이렉트 방식 결제창 호출 함수 (에러 완벽 차단) ===
+  const handleCheckout = async () => {
+    if (!payment) {
+      alert("결제 모듈이 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.");
       return;
     }
 
-    const receiptItems = cart.map(item => ({
-      name: item.name,
-      count: item.count,
-      iceName: item.iceOption ? item.iceOption.name : null,
-      adds: item.addOptions.map(o => `${o.name} ${o.count}개`)
-    }));
+    const generatedOrderId = "ORDER-" + new Date().getTime();
+    const orderName = cart.length > 1 
+      ? `${cart[0].name} 외 ${cart.length - 1}건` 
+      : cart[0].name;
 
     const orderData = {
       totalPrice: totalAmount,
@@ -108,33 +148,48 @@ function KioskMain() {
       })
     };
 
-    fetch("http://localhost:8080/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(orderData)
-    })
-    .then(response => {
-      if (response.ok) return response.json();
-      throw new Error("결제 실패");
-    })
-    .then(orderId => {
-      alert("💳 결제가 완료되었습니다!"); 
+    const receiptItems = cart.map(item => ({
+      name: item.name,
+      count: item.count,
+      iceName: item.iceOption ? item.iceOption.name : null,
+      adds: item.addOptions.map(o => `${o.name} ${o.count}개`)
+    }));
 
-      setReceipt({
-        orderId: orderId,
-        items: receiptItems,
-        totalAmount: totalAmount
+    // 나중에 메인으로 돌아와서 띄워줄 영수증 미리 세션에 백업
+    sessionStorage.setItem(generatedOrderId, JSON.stringify({ orderData, receiptItems, totalAmount }));
+
+    // 토스 창을 띄우지 않고 가짜 데이터와 함께 바로 success로 이동
+    //const fakePaymentKey = "fake_payment_key_" + new Date().getTime();
+    //window.location.href = `/success?paymentKey=${fakePaymentKey}&orderId=${generatedOrderId}&amount=${totalAmount}`;
+
+    // 실제 구동하는 코드
+    try {
+      // 🌟 windowTarget 옵션을 삭제하여 안전하게 토스 기본 창으로 결제 요청 진행
+      await payment.requestPayment({
+        method: "CARD",
+        amount: {
+          currency: "KRW",
+          value: totalAmount,
+        },
+        orderId: generatedOrderId, 
+        orderName: orderName,
+        successUrl: window.location.origin + "/success", 
+        failUrl: window.location.origin + "/fail",
+        card: {
+          useEscrow: false,
+          flowMode: "DEFAULT",
+          useCardPoint: false,
+          useAppCardOnly: false,
+          // 잔액 부족 에러 강제 발생
+          //variant: "INSUFFICIENT_BALANCE"
+        }
       });
-
-      setCart([]); 
-    })
-    .catch(err => {
-      console.error(err);
-      alert("결제 처리 중 서버 오류가 발생했습니다.");
-    });
+    } catch (error) {
+      alert(error.message);
+      // 결제 실패 화면 호출
+      //window.location.href = `/fail?code=${error.code}&message=${encodeURIComponent(error.message)}`;
+    }
   };
-
-  const totalAmount = cart.reduce((sum, item) => sum + (item.singlePrice * item.count), 0);
 
   const categoryIcons = {
     '전체': '✨',
@@ -169,18 +224,14 @@ function KioskMain() {
       <div className="menu-grid">
         {Array.isArray(menus) && menus.length > 0 ? (
           menus.map(menu => (
-            /* 🌟 [수정] menu.isSoldOut이 true인 경우 카드 전체에 disabled 클래스 부여 */
             <div key={menu.id} className={`menu-card ${menu.isSoldOut ? 'disabled' : ''}`}>
               <div className="menu-info">
                 <div className="menu-image-container" style={{ position: 'relative' }}>
-                  
-                  {/* 🌟 [추가] 품절 상태일 때 이미지 위를 덮을 반투명 마스크 레이어 */}
                   {menu.isSoldOut && (
                     <div className="sold-out-overlay">
                       <span>품절</span>
                     </div>
                   )}
-
                   <img 
                     src={menu.imageUrl ? `/menu-image/${menu.imageUrl}` : '/menu-image/default.jpg'} 
                     alt={menu.name} 
@@ -188,12 +239,10 @@ function KioskMain() {
                     onError={(e) => { e.target.src = '/menu-image/default.jpg'; }} 
                   />
                 </div>
-
                 <strong className="menu-name">{menu.name}</strong> <br />
                 <span className="menu-price">{menu.price.toLocaleString()}원</span>
               </div>
               
-              {/* 🌟 [수정] 품절인 경우 버튼을 비활성화(disabled) 처리 */}
               <button 
                 onClick={() => openOptionModal(menu)} 
                 className="btn-primary"

@@ -333,6 +333,15 @@ body {
   box-sizing: border-box;
 }
 
+.modal-title{
+  text-align: center;
+}
+
+.modal-subtitle{
+  text-align: center;
+  color: rgb(92, 92, 92);
+}
+
 .modal-group-title {
   font-size: 16px;
   font-weight: 700;
