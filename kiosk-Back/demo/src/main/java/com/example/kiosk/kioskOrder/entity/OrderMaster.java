@@ -20,6 +20,9 @@ public class OrderMaster {
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now(); // 주문 시간 자동 입력
 
+    @Column(name = "is_completed")
+    private boolean isCompleted = false;
+
     public String getOrderDate() {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'getOrderDate'");

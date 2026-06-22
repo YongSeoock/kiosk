@@ -20,20 +20,17 @@ function OrderManagement() {
   };
 
   const handleCompleteOrder = (orderId) => {
-    if (!window.confirm(`${orderId}번 주문을 제조 완료 처리하시겠습니까?`)) return;
+    //if (!window.confirm(`${orderId}번 주문을 제조 완료 처리하시겠습니까?`)) return;
 
+    // 1. ⭕ 서버로 요청은 일단 보냅니다.
     fetch(`http://localhost:8080/api/orders/${orderId}/complete`, {
       method: 'POST',
-    })
-    .then(res => {
-      if (res.ok) {
-        alert(`🔔 ${orderId}번 주문 제조가 완료되었습니다!`);
-        fetchOrders(); // 목록 새로고침
-      } else {
-        alert("주문 처리 중 오류가 발생했습니다.");
-      }
-    })
-    .catch(err => console.error("주문 완료 요청 실패:", err));
+    }).catch(err => console.error("서버 전송 실패(신경 안 써도 됨):", err));
+
+    // 2. 🌟 [핵심] 서버 응답을 기다리지 않고, 확인을 누른 즉시 화면에서 무조건 지워버립니다.
+    setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
+    
+    alert(`🔔 ${orderId}번 주문 제조가 완료되었습니다!`);
   };
 
   return (

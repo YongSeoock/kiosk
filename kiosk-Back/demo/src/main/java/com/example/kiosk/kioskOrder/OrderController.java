@@ -16,16 +16,22 @@ public class OrderController {
 
     @PostMapping
     public ResponseEntity<Long> placeOrder(@RequestBody OrderRequestDto requestDto) {
-        Long orderId = orderService.createOrder(requestDto); // 💡 생성된 주문 ID 받아오기
-        return ResponseEntity.ok(orderId); // 💡 숫자로 주문번호 직접 응답
+        Long orderId = orderService.createOrder(requestDto); // 생성된 주문 ID 받아오기
+        return ResponseEntity.ok(orderId); // 숫자로 주문번호 직접 응답
     }
     
-    // 🌟 [추가] 관리자 페이지에서 주문 목록을 불러올 때 쓰는 메서드
+    // 전체 조회가 아니라 '대기 중인 주문 목록'만 불러오도록 변경
     @GetMapping
-    public ResponseEntity<List<OrderResponseDto>> getAllOrders() {
-        // 아직 OrderService에 전체 조회 메서드가 없다면 아래 💡 체크포인트를 참고해 만들어야 합니다.
-        List<OrderResponseDto> orders = orderService.getAllOrders(); 
+    public ResponseEntity<List<OrderResponseDto>> getActiveOrders() {
+        // Service에서 대기 중인 주문(isCompleted = false)만 조회하는 메서드로 변경
+        List<OrderResponseDto> orders = orderService.getActiveOrders(); 
         return ResponseEntity.ok(orders);
     }
-    
+
+    // 리액트에서 완료 버튼을 눌렀을 때 호출할 API
+    @PostMapping("/{orderId}/complete")
+    public ResponseEntity<Void> completeOrder(@PathVariable(name = "orderId") Long orderId) {
+        orderService.completeOrder(orderId);
+        return ResponseEntity.ok().build(); // 리액트의 res.ok를 만족시키기 위해 200 OK 응답
+    }
 }

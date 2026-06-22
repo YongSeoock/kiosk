@@ -55,20 +55,40 @@ public class OrderService {
             }
         }
 
-        // 💡 [여기 추가!!] 생성된 주문 마스터의 ID(주문번호)를 반드시 리턴해줘야 합니다.
         return savedMaster.getId(); 
     }
 
-    // 🌟 [추가] 관리자 페이지를 위한 전체 주문 목록 조회
+    // 기존의 전체 조회 (필요 시 보존)
     @Transactional(readOnly = true)
     public List<OrderResponseDto> getAllOrders() {
         List<OrderMaster> masters = orderMasterRepository.findAll();
+        return convertToResponseDtoList(masters);
+    }
+
+    // ⭕ [추가] 컨트롤러가 요청하는 '대기 중인 주문 목록'만 필터링 조회
+    @Transactional(readOnly = true)
+    public List<OrderResponseDto> getActiveOrders() {
+        // Repository에 새로 추가할 findByIsCompletedFalseOrderByIdDesc() 메서드 호출
+        List<OrderMaster> activeMasters = orderMasterRepository.findByIsCompletedFalse();
+        return convertToResponseDtoList(activeMasters);
+    }
+
+    // ⭕ [추가] 제조 완료 클릭 시 상태값만 true로 업데이트 (정석 더티체킹)
+    @Transactional
+    public void completeOrder(Long orderId) {
+        OrderMaster orderMaster = orderMasterRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 주문이 존재하지 않습니다. ID: " + orderId));
         
+        // 🌟 OrderMaster 엔티티에 세터가 생성되어 있어야 합니다. (예: setCompleted 혹은 setisCompleted)
+        orderMaster.setCompleted(true); 
+    }
+
+    // 💡 getAllOrders와 getActiveOrders에서 중복되는 매핑 로직을 분리한 메서드입니다.
+    private List<OrderResponseDto> convertToResponseDtoList(List<OrderMaster> masters) {
         return masters.stream()
                 .map(master -> {
                     OrderResponseDto responseDto = new OrderResponseDto(master);
                     
-                    // 주문 번호에 해당하는 상세 메뉴 리스트 조회
                     List<OrderParticular> particulars = orderParticularRepository.findByOrderId(master.getId());
                     
                     List<OrderResponseDto.OrderDetailDto> detailDtos = particulars.stream()
@@ -76,30 +96,25 @@ public class OrderService {
                                 OrderResponseDto.OrderDetailDto detailDto = new OrderResponseDto.OrderDetailDto();
                                 detailDto.setQuantity(part.getQuantity());
                                 
-                                //주문 메뉴 가격 가져오기
                                 menuRepository.findById(part.getMenuId()).ifPresent(menu -> {
                                     detailDto.setMenuName(menu.getName());
-                                    detailDto.setPrice(menu.getPrice());        // 👈 DB의 진짜 가격을 세팅!
-                                    detailDto.setCategory(menu.getCategory());  // 🌟 DB에서 카테고리를 가져와 세팅!
+                                    detailDto.setPrice(menu.getPrice());
+                                    detailDto.setCategory(menu.getCategory());
                                 });
 
-                                // 데이터가 없을 때를 위한 안전장치
                                 if (detailDto.getMenuName() == null) {
                                     detailDto.setMenuName("알 수 없는 메뉴(ID:" + part.getMenuId() + ")");
                                     detailDto.setPrice(0);
                                     detailDto.setCategory("기타");
                                 }
 
-                                // [메뉴명 매핑] menuRepository를 사용해 진짜 메뉴 이름을 찾아옵니다.
                                 String realMenuName = menuRepository.findById(part.getMenuId())
                                         .map(menu -> menu.getName()) 
                                         .orElse("알 수 없는 메뉴(ID:" + part.getMenuId() + ")");
                                 detailDto.setMenuName(realMenuName);
                                 
-                                // [옵션명 매핑] orderOptionRepository에서 해당 상세 메뉴에 걸린 옵션들을 찾습니다.
                                 List<OrderOption> options = orderOptionRepository.findByOrderMenuId(part.getId());
                                 
-                                // 🌟 2. 장착한 productOptionRepository를 사용하여 진짜 이름을 한 줄로 합칩니다!
                                 String combinedOptions = options.stream()
                                         .map(opt -> {
                                             return productOptionRepository.findById(opt.getOptionId())
