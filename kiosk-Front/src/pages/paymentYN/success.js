@@ -26,7 +26,7 @@ function Success() {
     const { orderData, receiptItems, totalAmount } = savedData;
 
     // 기존 백엔드 주소로 주문 데이터 전송
-    fetch("http://localhost:8080/api/orders", {
+    fetch(`${process.env.REACT_APP_API_URL}/api/orders`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(orderData)

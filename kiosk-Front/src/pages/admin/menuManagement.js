@@ -10,7 +10,7 @@ function MenuManagement() {
 
   // 🌟 2. 백엔드로부터 카테고리별 데이터 조회 (GET)
   useEffect(() => {
-    fetch(`http://localhost:8080/api/menus?category=${category}`)
+    fetch(`${process.env.REACT_APP_API_URL}/api/menus?category=${category}`)
       .then(res => res.json())
       .then(data => {
         // 백엔드 날짜(ISO)를 리액트 <input type="date"> 포맷(YYYY-MM-DD)으로 변환 후 저장
@@ -33,7 +33,7 @@ function MenuManagement() {
       soldOutUntil: nextSoldOut && endDate ? `${endDate}T23:59:59` : null
     };
 
-    fetch(`http://localhost:8080/api/menus/${id}/soldout`, {
+    fetch(`${process.env.REACT_APP_API_URL}/api/menus/${id}/soldout`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody)
@@ -59,7 +59,7 @@ function MenuManagement() {
       soldOutUntil: value ? `${value}T23:59:59` : null
     };
 
-    fetch(`http://localhost:8080/api/menus/${id}/soldout`, {
+    fetch(`${process.env.REACT_APP_API_URL}/api/menus/${id}/soldout`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody)

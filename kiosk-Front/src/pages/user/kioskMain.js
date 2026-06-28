@@ -24,7 +24,7 @@ function KioskMain() {
 
   // === 메뉴 데이터 로드 ===
   useEffect(() => {
-    fetch(`http://localhost:8080/api/menus?category=${currentCategory}`)
+    fetch(`${process.env.REACT_APP_API_URL}/api/menus?category=${currentCategory}`)
       .then(response => response.json())
       .then(data => { if (Array.isArray(data)) setMenus(data); })
       .catch(err => console.error("서버 연결 실패 :", err));

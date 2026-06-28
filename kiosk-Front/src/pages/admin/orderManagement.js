@@ -10,7 +10,7 @@ function OrderManagement() {
   }, []);
 
   const fetchOrders = () => {
-    fetch('http://localhost:8080/api/orders')
+    fetch(`${process.env.REACT_APP_API_URL}/api/orders`)
       .then(res => res.json())
       .then(data => {
         console.log("실제 서버에서 받아온 데이터:", data);
@@ -23,7 +23,7 @@ function OrderManagement() {
     //if (!window.confirm(`${orderId}번 주문을 제조 완료 처리하시겠습니까?`)) return;
 
     // 1. ⭕ 서버로 요청은 일단 보냅니다.
-    fetch(`http://localhost:8080/api/orders/${orderId}/complete`, {
+    fetch(`${process.env.REACT_APP_API_URL}/api/orders/${orderId}/complete`, {
       method: 'POST',
     }).catch(err => console.error("서버 전송 실패(신경 안 써도 됨):", err));
 

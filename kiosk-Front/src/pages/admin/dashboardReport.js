@@ -11,7 +11,7 @@ function DashboardReport() {
     const itemsPerPage = 5; 
 
     useEffect(() => {
-        fetch("http://localhost:8080/api/orders")
+        fetch(`${process.env.REACT_APP_API_URL}/api/orders`)
             .then(res => res.json())
             .then(data => setOrders(data))
             .catch(err => console.error("데이터 로드 실패:", err));
