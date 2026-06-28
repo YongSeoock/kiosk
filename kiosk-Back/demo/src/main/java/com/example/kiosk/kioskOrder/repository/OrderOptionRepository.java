@@ -10,4 +10,5 @@ import com.example.kiosk.kioskOrder.entity.OrderOption;
 @Repository
 public interface OrderOptionRepository extends JpaRepository<OrderOption, Long> {
     List<OrderOption> findByOrderMenuId(Long orderMenuId); // order_menu_id로 옵션들 긁어오기
+    List<OrderOption> findByOrderMenuIdIn(List<Long> orderMenuIds);
 }

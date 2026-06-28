@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.example.kiosk.kioskOrder.entity.OrderMaster;
 import com.example.kiosk.kioskOrder.entity.OrderOption;
@@ -13,6 +14,8 @@ import com.example.kiosk.kioskOrder.entity.OrderParticular;
 import com.example.kiosk.kioskOrder.repository.OrderMasterRepository;
 import com.example.kiosk.kioskOrder.repository.OrderOptionRepository;
 import com.example.kiosk.kioskOrder.repository.OrderParticularRepository;
+import com.example.kiosk.kioskMenu.entity.Menu;
+import com.example.kiosk.kioskMenu.entity.ProductOption;
 import com.example.kiosk.kioskMenu.repository.MenuRepository;
 import com.example.kiosk.kioskMenu.repository.ProductOptionRepository;
 
@@ -83,8 +86,94 @@ public class OrderService {
         orderMaster.setCompleted(true); 
     }
 
-    // 💡 getAllOrders와 getActiveOrders에서 중복되는 매핑 로직을 분리한 메서드입니다.
     private List<OrderResponseDto> convertToResponseDtoList(List<OrderMaster> masters) {
+
+    // 1. 주문 ID 목록
+    List<Long> masterIds = masters.stream()
+            .map(OrderMaster::getId)
+            .toList();
+
+    // 2. order_menu 한 번에 조회
+    List<OrderParticular> allParticulars = orderParticularRepository.findByOrderIdIn(masterIds);
+
+    // 3. order_menu_id 목록
+    List<Long> particularIds = allParticulars.stream()
+            .map(OrderParticular::getId)
+            .toList();
+
+    // 4. menu, order_menu_option, product_option 한 번에 조회
+    List<Long> menuIds = allParticulars.stream()
+            .map(OrderParticular::getMenuId)
+            .distinct()
+            .toList();
+    List<Menu> allMenus = menuRepository.findByIdIn(menuIds);
+    Map<Long, Menu> menuMap = allMenus.stream()
+            .collect(Collectors.toMap(Menu::getId, m -> m));
+
+    List<OrderOption> allOptions = orderOptionRepository.findByOrderMenuIdIn(particularIds);
+    List<Long> optionIds = allOptions.stream()
+            .map(OrderOption::getOptionId)
+            .distinct()
+            .toList();
+    List<ProductOption> allProductOptions = productOptionRepository.findByIdIn(optionIds);
+    Map<Long, ProductOption> productOptionMap = allProductOptions.stream()
+            .collect(Collectors.toMap(ProductOption::getId, o -> o));
+
+    // 5. order_menu_option을 order_menu_id 기준으로 그룹핑
+    Map<Long, List<OrderOption>> optionsByParticularId = allOptions.stream()
+            .collect(Collectors.groupingBy(OrderOption::getOrderMenuId));
+
+    // 6. order_menu를 order_id 기준으로 그룹핑
+    Map<Long, List<OrderParticular>> particularsByOrderId = allParticulars.stream()
+            .collect(Collectors.groupingBy(OrderParticular::getOrderId));
+
+    // 7. 조합
+    return masters.stream()
+            .map(master -> {
+                OrderResponseDto responseDto = new OrderResponseDto(master);
+                List<OrderParticular> particulars = particularsByOrderId
+                        .getOrDefault(master.getId(), List.of());
+
+                List<OrderResponseDto.OrderDetailDto> detailDtos = particulars.stream()
+                        .map(part -> {
+                            OrderResponseDto.OrderDetailDto detailDto = new OrderResponseDto.OrderDetailDto();
+                            detailDto.setQuantity(part.getQuantity());
+
+                            Menu menu = menuMap.get(part.getMenuId());
+                            if (menu != null) {
+                                detailDto.setMenuName(menu.getName());
+                                detailDto.setPrice(menu.getPrice());
+                                detailDto.setCategory(menu.getCategory());
+                            } else {
+                                detailDto.setMenuName("알 수 없는 메뉴(ID:" + part.getMenuId() + ")");
+                                detailDto.setPrice(0);
+                                detailDto.setCategory("기타");
+                            }
+
+                            List<OrderOption> options = optionsByParticularId
+                                    .getOrDefault(part.getId(), List.of());
+                            String combinedOptions = options.stream()
+                                    .map(opt -> {
+                                        ProductOption po = productOptionMap.get(opt.getOptionId());
+                                        return po != null
+                                                ? po.getName() + "(+" + opt.getQuantity() + "개)"
+                                                : "옵션(ID:" + opt.getOptionId() + ")";
+                                    })
+                                    .collect(Collectors.joining(", "));
+
+                            detailDto.setOptions(combinedOptions.isEmpty() ? "선택 옵션 없음" : combinedOptions);
+                            return detailDto;
+                        })
+                        .toList();
+
+                responseDto.setOrderItems(detailDtos);
+                return responseDto;
+            })
+            .toList();
+    }
+
+    // 💡 getAllOrders와 getActiveOrders에서 중복되는 매핑 로직을 분리한 메서드입니다.
+    /*private List<OrderResponseDto> convertToResponseDtoList(List<OrderMaster> masters) {
         return masters.stream()
                 .map(master -> {
                     OrderResponseDto responseDto = new OrderResponseDto(master);
@@ -133,5 +222,5 @@ public class OrderService {
                     return responseDto;
                 })
                 .toList();
-    }
+    }*/
 }

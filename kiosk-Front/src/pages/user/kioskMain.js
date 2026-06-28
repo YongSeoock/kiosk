@@ -162,7 +162,7 @@ function KioskMain() {
     //const fakePaymentKey = "fake_payment_key_" + new Date().getTime();
     //window.location.href = `/success?paymentKey=${fakePaymentKey}&orderId=${generatedOrderId}&amount=${totalAmount}`;
 
-    // 실제 구동하는 코드
+    // 실제 구동하는 코드 이 부분을 지우고 결제 성공 화면 호출만 하면 테스트할때 편함
     try {
       // 🌟 windowTarget 옵션을 삭제하여 안전하게 토스 기본 창으로 결제 요청 진행
       await payment.requestPayment({

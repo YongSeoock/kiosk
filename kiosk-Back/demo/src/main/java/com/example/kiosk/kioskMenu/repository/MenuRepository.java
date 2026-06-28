@@ -10,6 +10,8 @@ import java.util.List;
 @Repository
 public interface MenuRepository extends JpaRepository<Menu, Long> {
 
+    List<Menu> findByIdIn(List<Long> ids);
+
     // 1. 전체 조회 규칙 (성능 최적화를 위한 Fetch Join)
     @Query("SELECT DISTINCT m FROM Menu m LEFT JOIN FETCH m.menuOptions mo LEFT JOIN FETCH mo.productOption ORDER BY m.id ASC")
     List<Menu> findAllWithOptions();

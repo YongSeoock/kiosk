@@ -10,4 +10,5 @@ import com.example.kiosk.kioskOrder.entity.OrderParticular;
 @Repository
 public interface OrderParticularRepository extends JpaRepository<OrderParticular, Long> {
     List<OrderParticular> findByOrderId(Long orderId);
+    List<OrderParticular> findByOrderIdIn(List<Long> orderIds);
 }

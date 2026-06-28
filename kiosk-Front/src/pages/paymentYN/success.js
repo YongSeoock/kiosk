@@ -76,7 +76,7 @@ function Success() {
       fontFamily: 'sans-serif', 
       backgroundColor: '#f4faff' 
     }}>
-      <h2 style={{ color: '#0051FF', marginBottom: '8px' }}>🎉 결제가 성공적으로 완료되었습니다!</h2>
+      <h2 style={{ color: 'green', marginBottom: '8px' }}>🎉 결제가 성공적으로 완료되었습니다!</h2>
       
       {/* 🌟 countdown 상태를 넣어 실시간으로 숫자가 변하게 표출 */}
       <p style={{ color: '#666', fontSize: '16px' }}>
@@ -95,7 +95,7 @@ function Success() {
         <div style={{ 
           width: `${((3 - countdown) / 2) * 100}%`, // 시간에 맞춰 0% -> 50% -> 100% 비율 계산
           height: '100%', 
-          backgroundColor: '#0051FF',
+          backgroundColor: 'green',
           transition: 'width 1s linear' // 부드럽게 바가 움직이는 효과
         }}></div>
       </div>
