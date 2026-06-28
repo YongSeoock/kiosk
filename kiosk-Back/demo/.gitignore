@@ -1,6 +1,5 @@
 # Properties 파일 (비밀번호 포함)
-src/main/resources/application.properties
-src/main/resources/application-*.properties
+src/main/resources/application-local.properties
 
 # IDE
 .idea/
