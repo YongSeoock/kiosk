@@ -28,6 +28,12 @@ public class OrderController {
         return ResponseEntity.ok(orders);
     }
 
+    // 전체 조회하여 전체 누적 매출에는 영향이 안가도록 추가
+    @GetMapping("/report")
+    public ResponseEntity<List<OrderResponseDto>> getAllOrders() {
+        return ResponseEntity.ok(orderService.getAllOrders());
+    }
+
     // 리액트에서 완료 버튼을 눌렀을 때 호출할 API
     @PostMapping("/{orderId}/complete")
     public ResponseEntity<Void> completeOrder(@PathVariable(name = "orderId") Long orderId) {

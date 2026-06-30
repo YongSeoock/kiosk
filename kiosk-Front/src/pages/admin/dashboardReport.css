@@ -167,3 +167,230 @@ h3 {
     border-color: #0088FE;
     font-weight: 500;
 }
+
+/* ===== AI 분석 / 예측 버튼 그룹 ===== */
+.ai-action-bar {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+    margin-bottom: 8px;
+}
+
+.ai-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 20px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ai-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.ai-btn--primary {
+    background-color: #111827;
+    color: #fff;
+}
+
+.ai-btn--primary:hover:not(:disabled) {
+    background-color: #1f2937;
+}
+
+.ai-btn--secondary {
+    background-color: #fff;
+    color: #111827;
+    border-color: #d1d5db;
+}
+
+.ai-btn--secondary:hover:not(:disabled) {
+    background-color: #f3f4f6;
+}
+
+/* ===== AI 매출 분석 결과 박스 ===== */
+.ai-analysis-box {
+    margin-top: 20px;
+    padding: 28px;
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.ai-analysis-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.ai-analysis-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: #111827;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.ai-analysis-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.ai-analysis-badge {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    background: #f3f4f6;
+    padding: 4px 10px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+}
+
+.ai-analysis-body {
+    text-align: left;
+    line-height: 1.85;
+    color: #374151;
+    font-size: 14.5px;
+}
+
+.ai-analysis-body p {
+    margin: 0 0 12px;
+}
+
+.ai-analysis-body strong {
+    color: #111827;
+}
+
+/* ===== 매출 예측(Prophet) 섹션 ===== */
+.forecast-section {
+    background-color: #ffffff;
+    padding: 24px;
+    border-radius: 14px;
+    margin-top: 20px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.forecast-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.forecast-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.forecast-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.forecast-model-badge {
+    font-size: 11px;
+    font-weight: 600;
+    color: #15803d;
+    background: #dcfce7;
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+
+.forecast-growth-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+
+.forecast-growth-badge--up {
+    color: #15803d;
+    background: #dcfce7;
+}
+
+.forecast-growth-badge--down {
+    color: #b91c1c;
+    background: #fee2e2;
+}
+
+/* 실측/예측 범례 */
+.forecast-legend {
+    display: flex;
+    gap: 18px;
+    margin-bottom: 14px;
+    font-size: 12.5px;
+    color: #6b7280;
+}
+
+.forecast-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.forecast-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+}
+
+.forecast-legend-dot--actual {
+    background-color: #ef4444;
+}
+
+.forecast-legend-dot--predicted {
+    background-color: #fecaca;
+}
+
+/* AI 인사이트 박스 (예측 하단) */
+.forecast-insight-box {
+    margin-top: 18px;
+    padding: 18px 20px;
+    background-color: #fafafa;
+    border: 1px solid #e5e7eb;
+    border-left: 3px solid #111827;
+    border-radius: 10px;
+    display: flex;
+    gap: 12px;
+}
+
+.forecast-insight-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.forecast-insight-text {
+    font-size: 14px;
+    line-height: 1.75;
+    color: #374151;
+}
+
+.forecast-insight-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+    display: block;
+}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import './dashboardReport.css';
+import ReactMarkdown from 'react-markdown';
 
 function DashboardReport() {
     const [orders, setOrders] = useState([]);
@@ -11,7 +12,7 @@ function DashboardReport() {
     const itemsPerPage = 5; 
 
     useEffect(() => {
-        fetch(`${process.env.REACT_APP_API_URL}/api/orders`)
+        fetch(`${process.env.REACT_APP_API_URL}/api/orders/report`)
             .then(res => res.json())
             .then(data => setOrders(data))
             .catch(err => console.error("데이터 로드 실패:", err));
@@ -19,6 +20,33 @@ function DashboardReport() {
 
     // 🌟 안전하고 직관적인 방식으로 데이터 가공 
     const statsMap = {};
+
+    // 💡 orders가 존재하고, '진짜 배열'일 때만 내부 로직을 실행하도록 방어막 추가
+    if (orders && Array.isArray(orders)) {
+        orders.forEach(order => {
+            order.orderItems?.forEach(item => {
+                const cleanMenuName = item.menuName ? item.menuName.trim() : "";
+                if (!cleanMenuName) return;
+
+                if (!statsMap[cleanMenuName]) {
+                    statsMap[cleanMenuName] = {
+                        name: cleanMenuName,
+                        count: 0,
+                        totalSales: 0,
+                        category: item.category || "기타" // 백엔드에서 준 카테고리 바로 매핑
+                    };
+                }
+                
+                statsMap[cleanMenuName].count += item.quantity;
+                statsMap[cleanMenuName].totalSales += (item.price || 0) * item.quantity;
+            });
+        });
+    } else {
+        // 💡 5만 건 대용량 처리 시 API가 에러를 뱉거나 객체로 주면 여기에 걸립니다.
+        console.warn("orders가 배열이 아니거나 비어있습니다. 현재 데이터 상태:", orders);
+    }
+
+    /*const statsMap = {};
 
     orders?.forEach(order => {
         order.orderItems?.forEach(item => {
@@ -37,7 +65,7 @@ function DashboardReport() {
             statsMap[cleanMenuName].count += item.quantity;
             statsMap[cleanMenuName].totalSales += (item.price || 0) * item.quantity;
         });
-    });
+    });*/
 
     // 가공된 객체를 배열로 변환
     const allStats = Object.values(statsMap);
@@ -53,10 +81,10 @@ function DashboardReport() {
     // 테이블용 정렬 (선택된 카테고리 내에서 판매량 순)
     const sortedStats = [...filteredStats].sort((a, b) => b.count - a.count);
 
-    // 🌟 차트용 TOP 7 데이터 정렬 (차트가 사라지지 않도록 전체 데이터 기준으로 안전하게 추출)
+    // 🌟 차트용 TOP 20 데이터 정렬 (차트가 사라지지 않도록 전체 데이터 기준으로 안전하게 추출)
     const chartData = [...allStats]
         .sort((a, b) => b.count - a.count)
-        .slice(0, 7)
+        .slice(0, 20)
         .map(item => ({
             name: item.name,
             value: item.count,      // 수량 (Bar 차트가 그릴 값)
@@ -83,21 +111,91 @@ function DashboardReport() {
         return orderDateStr.trim() === todayStr;
     });
 
+    // 1. 순수 매출 초기화 및 누적 계산 (가장 먼저 수행)
     let todayPureRevenue = 0;
     todayOrders?.forEach(order => {
         order.orderItems?.forEach(item => { todayPureRevenue += (item.price || 0) * item.quantity; });
     });
-    
+
     const totalRevenue = orders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
     const todayTotalRevenue = todayOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
     const todayOptionRevenue = todayTotalRevenue - todayPureRevenue;
     const todayOrderCount = todayOrders.length;
     const avgOrderPrice = todayOrderCount > 0 ? Math.round(todayTotalRevenue / todayOrderCount) : 0;
-    
+
     // 인기메뉴 1위 추출
     const bestMenu = allStats.sort((a, b) => b.count - a.count)[0];
 
     const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
+
+    const [aiAnalysis, setAiAnalysis] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const handleAiAnalysis = () => {
+        setLoading(true);
+        const salesList = allStats.map(item => ({
+            menuName: item.name,
+            category: item.category,
+            price: item.totalSales / item.count,
+            count: item.count
+        }));
+
+        fetch("http://127.0.0.1:8000/api/v1/kiosk/sales-analysis", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ salesList })
+        })
+            .then(res => res.json())
+            .then(data => {
+                setAiAnalysis(data.analysis);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error("AI 분석 실패:", err);
+                setLoading(false);
+            });
+    };
+
+
+    // AI 시각화를 위한 코드
+    const [forecastData, setForecastData] = useState([]);
+    const [forecastInsight, setForecastInsight] = useState("");
+    const [forecastLoading, setForecastLoading] = useState(false);
+    const [growthRate, setGrowthRate] = useState(0);
+
+    const handleForecast = () => {
+        setForecastLoading(true);
+
+        // 월별 매출 합산
+        const monthlyMap = {};
+        orders.forEach(order => {
+            if (!order.createdAt) return;
+            const month = order.createdAt.slice(0, 7); // "2026-01"
+            if (!monthlyMap[month]) monthlyMap[month] = 0;
+            monthlyMap[month] += order.totalPrice || 0;
+        });
+
+        const monthlyData = Object.entries(monthlyMap)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([month, revenue]) => ({ month, revenue }));
+
+        fetch("http://127.0.0.1:8000/api/v1/kiosk/sales-forecast", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ monthlyData })
+        })
+            .then(res => res.json())
+            .then(data => {
+                setForecastData(data.forecastData);
+                setForecastInsight(data.insight);
+                setGrowthRate(data.growthRate);
+                setForecastLoading(false);
+            })
+            .catch(err => {
+                console.error("예측 실패:", err);
+                setForecastLoading(false);
+            });
+    };
 
     return (
         <div className="report-container">
@@ -136,7 +234,7 @@ function DashboardReport() {
 
             {/* 시각화 차트 구역 */}
             <div className="chart-section" style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', marginBottom: '30px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                <h3 style={{ marginTop: 0, marginBottom: '20px' }}>📈 주요 메뉴별 판매 수량 TOP 7</h3>
+                <h3 style={{ marginTop: 0, marginBottom: '20px' }}>📈 메뉴별 판매 수량에 따른 순위</h3>
                 <div style={{ width: '100%', height: 300 }}>
                     {/* 🌟 데이터가 없을 때 차트가 깨지는 것을 방지하는 예외 조건문 추가 */}
                     {chartData.length > 0 ? (
@@ -227,6 +325,77 @@ function DashboardReport() {
                             {i + 1}
                         </button>
                     ))}
+                </div>
+            )}
+
+            {/* 매출 분석 AI */}
+            <div className="ai-action-bar">
+                <button className="ai-btn ai-btn--primary" onClick={handleAiAnalysis} disabled={loading}>
+                    🤖 {loading ? "분석 중..." : "AI 매출 분석"}
+                </button>
+                <button className="ai-btn ai-btn--secondary" onClick={handleForecast} disabled={forecastLoading}>
+                    📈 {forecastLoading ? "예측 중..." : "매출 예측"}
+                </button>
+            </div>
+
+            {aiAnalysis && (
+                <div className="ai-analysis-box">
+                    <div className="ai-analysis-header">
+                        <div className="ai-analysis-icon">🤖</div>
+                        <span className="ai-analysis-title">AI 매출 분석 결과</span>
+                        <span className="ai-analysis-badge">Gemini 2.5</span>
+                    </div>
+                    <div className="ai-analysis-body">
+                        <ReactMarkdown>{aiAnalysis}</ReactMarkdown>
+                    </div>
+                </div>
+            )}
+
+            {forecastData.length > 0 && (
+                <div className="forecast-section">
+                    <div className="forecast-header">
+                        <h3 className="forecast-title">📈 매출 예측</h3>
+                        <div className="forecast-meta">
+                            <span className="forecast-model-badge">Prophet</span>
+                            <span className={`forecast-growth-badge ${growthRate >= 0 ? 'forecast-growth-badge--up' : 'forecast-growth-badge--down'}`}>
+                                {growthRate >= 0 ? '▲' : '▼'} {Math.abs(growthRate)}%
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="forecast-legend">
+                        <div className="forecast-legend-item">
+                            <span className="forecast-legend-dot forecast-legend-dot--actual"></span>
+                            실측 매출
+                        </div>
+                        <div className="forecast-legend-item">
+                            <span className="forecast-legend-dot forecast-legend-dot--predicted"></span>
+                            예측 매출
+                        </div>
+                    </div>
+
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={forecastData}>
+                            <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                            <YAxis tick={{ fontSize: 12 }} />
+                            <Tooltip formatter={(value) => `${value.toLocaleString()}원`} />
+                            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                                {forecastData.map((entry, index) => (
+                                    <Cell key={index} fill={entry.isPredicted ? "#fecaca" : "#ef4444"} />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+
+                    {forecastInsight && (
+                        <div className="forecast-insight-box">
+                            <span className="forecast-insight-icon">💡</span>
+                            <div className="forecast-insight-text">
+                                <span className="forecast-insight-label">AI Insight</span>
+                                {forecastInsight}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
