@@ -133,6 +133,8 @@ function DashboardReport() {
 
     const handleAiAnalysis = () => {
         setLoading(true);
+
+        // 기존 메뉴별 데이터
         const salesList = allStats.map(item => ({
             menuName: item.name,
             category: item.category,
@@ -140,10 +142,44 @@ function DashboardReport() {
             count: item.count
         }));
 
+        // 요일별 매출 집계
+        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+        const dayMap = {};
+        orders.forEach(order => {
+            if (!order.createdAt) return;
+            const day = dayNames[new Date(order.createdAt).getDay()];
+            if (!dayMap[day]) dayMap[day] = { count: 0, revenue: 0 };
+            dayMap[day].count += 1;
+            dayMap[day].revenue += order.totalPrice || 0;
+        });
+        const dailyStats = Object.entries(dayMap).map(([day, v]) => ({
+            day,
+            orderCount: v.count,
+            revenue: v.revenue
+        }));
+
+        // 시간대별 매출 집계
+        const hourMap = {};
+        orders.forEach(order => {
+            if (!order.createdAt) return;
+            const hour = new Date(order.createdAt).getHours();
+            const slot = `${hour}시`;
+            if (!hourMap[slot]) hourMap[slot] = { count: 0, revenue: 0 };
+            hourMap[slot].count += 1;
+            hourMap[slot].revenue += order.totalPrice || 0;
+        });
+        const hourlyStats = Object.entries(hourMap)
+            .sort(([a], [b]) => parseInt(a) - parseInt(b))
+            .map(([hour, v]) => ({
+                hour,
+                orderCount: v.count,
+                revenue: v.revenue
+            }));
+
         fetch("http://127.0.0.1:8000/api/v1/kiosk/sales-analysis", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ salesList })
+            body: JSON.stringify({ salesList, dailyStats, hourlyStats })
         })
             .then(res => res.json())
             .then(data => {
@@ -155,7 +191,6 @@ function DashboardReport() {
                 setLoading(false);
             });
     };
-
 
     // AI 시각화를 위한 코드
     const [forecastData, setForecastData] = useState([]);
