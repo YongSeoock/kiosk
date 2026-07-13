@@ -4,84 +4,51 @@ import './dashboardReport.css';
 import ReactMarkdown from 'react-markdown';
 
 function DashboardReport() {
-    const [orders, setOrders] = useState([]);
-    
+    const [summary, setSummary] = useState(null);
+
     // 카테고리 및 페이지네이션 상태 관리
     const [currentCategory, setCurrentCategory] = useState("전체");
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5; 
+    const itemsPerPage = 5;
 
     useEffect(() => {
-        fetch(`${process.env.REACT_APP_API_URL}/api/orders/report`)
+        fetch(`${process.env.REACT_APP_API_URL}/api/orders/report/summary`)
             .then(res => res.json())
-            .then(data => setOrders(data))
+            .then(data => setSummary(data))
             .catch(err => console.error("데이터 로드 실패:", err));
     }, []);
 
-    // 🌟 안전하고 직관적인 방식으로 데이터 가공 
-    const statsMap = {};
+    // ── 백엔드에서 이미 집계된 값 그대로 사용 (프론트 forEach 계산 제거) ──
+    const allStats = (summary?.menuStats ?? []).map(m => ({
+        name: m.menuName,
+        category: m.category,
+        count: m.count,
+        totalSales: m.totalSales
+    }));
 
-    // 💡 orders가 존재하고, '진짜 배열'일 때만 내부 로직을 실행하도록 방어막 추가
-    if (orders && Array.isArray(orders)) {
-        orders.forEach(order => {
-            order.orderItems?.forEach(item => {
-                const cleanMenuName = item.menuName ? item.menuName.trim() : "";
-                if (!cleanMenuName) return;
+    const totalRevenue = summary?.totalRevenue ?? 0;
+    const todayOrderCount = summary?.todayOrderCount ?? 0;
+    const todayTotalRevenue = summary?.todayTotalRevenue ?? 0;
+    const todayPureRevenue = summary?.todayPureRevenue ?? 0;
+    const todayOptionRevenue = todayTotalRevenue - todayPureRevenue;
+    const avgOrderPrice = todayOrderCount > 0 ? Math.round(todayTotalRevenue / todayOrderCount) : 0;
 
-                if (!statsMap[cleanMenuName]) {
-                    statsMap[cleanMenuName] = {
-                        name: cleanMenuName,
-                        count: 0,
-                        totalSales: 0,
-                        category: item.category || "기타" // 백엔드에서 준 카테고리 바로 매핑
-                    };
-                }
-                
-                statsMap[cleanMenuName].count += item.quantity;
-                statsMap[cleanMenuName].totalSales += (item.price || 0) * item.quantity;
-            });
-        });
-    } else {
-        // 💡 5만 건 대용량 처리 시 API가 에러를 뱉거나 객체로 주면 여기에 걸립니다.
-        console.warn("orders가 배열이 아니거나 비어있습니다. 현재 데이터 상태:", orders);
-    }
-
-    /*const statsMap = {};
-
-    orders?.forEach(order => {
-        order.orderItems?.forEach(item => {
-            const cleanMenuName = item.menuName ? item.menuName.trim() : "";
-            if (!cleanMenuName) return;
-
-            if (!statsMap[cleanMenuName]) {
-                statsMap[cleanMenuName] = {
-                    name: cleanMenuName,
-                    count: 0,
-                    totalSales: 0,
-                    category: item.category || "기타" // 백엔드에서 준 카테고리 바로 매핑
-                };
-            }
-            
-            statsMap[cleanMenuName].count += item.quantity;
-            statsMap[cleanMenuName].totalSales += (item.price || 0) * item.quantity;
-        });
-    });*/
-
-    // 가공된 객체를 배열로 변환
-    const allStats = Object.values(statsMap);
+    const dailyStats = summary?.dailyStats ?? [];
+    const hourlyStats = summary?.hourlyStats ?? [];
+    const monthlyStats = summary?.monthlyStats ?? [];
 
     // DB에 존재하는 카테고리 종류 동적 추출
     const availableCategories = ["전체", ...new Set(allStats.map(item => item.category))];
 
     // 카테고리 필터링 적용
-    const filteredStats = allStats.filter(item => 
+    const filteredStats = allStats.filter(item =>
         currentCategory === "전체" ? true : item.category === currentCategory
     );
 
     // 테이블용 정렬 (선택된 카테고리 내에서 판매량 순)
     const sortedStats = [...filteredStats].sort((a, b) => b.count - a.count);
 
-    // 🌟 차트용 TOP 20 데이터 정렬 (차트가 사라지지 않도록 전체 데이터 기준으로 안전하게 추출)
+    // 차트용 TOP 20 데이터 정렬
     const chartData = [...allStats]
         .sort((a, b) => b.count - a.count)
         .slice(0, 20)
@@ -94,7 +61,7 @@ function DashboardReport() {
     // 페이지네이션 계산
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = sortedStats.slice(indexOfFirstItem, indexOfLastItem); 
+    const currentItems = sortedStats.slice(indexOfFirstItem, indexOfLastItem);
     const totalPages = Math.ceil(sortedStats.length / itemsPerPage);
 
     const handleCategoryChange = (category) => {
@@ -102,29 +69,8 @@ function DashboardReport() {
         setCurrentPage(1);
     };
 
-    // 오늘 날짜 정산 데이터 계산
-    const today = new Date();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    const todayOrders = orders?.filter(order => {
-        if (!order.createdAt) return false;
-        const orderDateStr = order.createdAt.includes('T') ? order.createdAt.split('T')[0] : order.createdAt.slice(0, 10);
-        return orderDateStr.trim() === todayStr;
-    });
-
-    // 1. 순수 매출 초기화 및 누적 계산 (가장 먼저 수행)
-    let todayPureRevenue = 0;
-    todayOrders?.forEach(order => {
-        order.orderItems?.forEach(item => { todayPureRevenue += (item.price || 0) * item.quantity; });
-    });
-
-    const totalRevenue = orders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
-    const todayTotalRevenue = todayOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
-    const todayOptionRevenue = todayTotalRevenue - todayPureRevenue;
-    const todayOrderCount = todayOrders.length;
-    const avgOrderPrice = todayOrderCount > 0 ? Math.round(todayTotalRevenue / todayOrderCount) : 0;
-
-    // 인기메뉴 1위 추출
-    const bestMenu = allStats.sort((a, b) => b.count - a.count)[0];
+    // 인기 메뉴 1위 (판매량 순으로 이미 정렬된 sortedStats 재사용, allStats는 원본 유지)
+    const bestMenu = [...allStats].sort((a, b) => b.count - a.count)[0];
 
     const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
@@ -134,48 +80,14 @@ function DashboardReport() {
     const handleAiAnalysis = () => {
         setLoading(true);
 
-        // 기존 메뉴별 데이터
         const salesList = allStats.map(item => ({
             menuName: item.name,
             category: item.category,
-            price: item.totalSales / item.count,
+            price: item.count > 0 ? item.totalSales / item.count : 0,
             count: item.count
         }));
 
-        // 요일별 매출 집계
-        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-        const dayMap = {};
-        orders.forEach(order => {
-            if (!order.createdAt) return;
-            const day = dayNames[new Date(order.createdAt).getDay()];
-            if (!dayMap[day]) dayMap[day] = { count: 0, revenue: 0 };
-            dayMap[day].count += 1;
-            dayMap[day].revenue += order.totalPrice || 0;
-        });
-        const dailyStats = Object.entries(dayMap).map(([day, v]) => ({
-            day,
-            orderCount: v.count,
-            revenue: v.revenue
-        }));
-
-        // 시간대별 매출 집계
-        const hourMap = {};
-        orders.forEach(order => {
-            if (!order.createdAt) return;
-            const hour = new Date(order.createdAt).getHours();
-            const slot = `${hour}시`;
-            if (!hourMap[slot]) hourMap[slot] = { count: 0, revenue: 0 };
-            hourMap[slot].count += 1;
-            hourMap[slot].revenue += order.totalPrice || 0;
-        });
-        const hourlyStats = Object.entries(hourMap)
-            .sort(([a], [b]) => parseInt(a) - parseInt(b))
-            .map(([hour, v]) => ({
-                hour,
-                orderCount: v.count,
-                revenue: v.revenue
-            }));
-
+        // dailyStats, hourlyStats는 이미 백엔드 summary에서 받아온 값 그대로 사용
         fetch("http://127.0.0.1:8000/api/v1/kiosk/sales-analysis", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -201,18 +113,11 @@ function DashboardReport() {
     const handleForecast = () => {
         setForecastLoading(true);
 
-        // 월별 매출 합산
-        const monthlyMap = {};
-        orders.forEach(order => {
-            if (!order.createdAt) return;
-            const month = order.createdAt.slice(0, 7); // "2026-01"
-            if (!monthlyMap[month]) monthlyMap[month] = 0;
-            monthlyMap[month] += order.totalPrice || 0;
-        });
-
-        const monthlyData = Object.entries(monthlyMap)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([month, revenue]) => ({ month, revenue }));
+        // monthlyStats도 백엔드 summary에서 받아온 값 그대로 사용
+        const monthlyData = monthlyStats.map(m => ({
+            month: m.month,
+            revenue: m.revenue
+        }));
 
         fetch("http://127.0.0.1:8000/api/v1/kiosk/sales-forecast", {
             method: "POST",
@@ -246,7 +151,7 @@ function DashboardReport() {
                 <div className="kpi-card">
                     <span className="kpi-label">오늘 총 매출</span>
                     <span className="kpi-value">{todayTotalRevenue.toLocaleString()}원</span>
-                    <span className="kpi-sub" style={{color: '#555', fontWeight: '500'}}>
+                    <span className="kpi-sub" style={{ color: '#555', fontWeight: '500' }}>
                         (순수: {todayPureRevenue.toLocaleString()}원 / 옵션: {todayOptionRevenue.toLocaleString()}원)
                     </span>
                 </div>
@@ -271,7 +176,6 @@ function DashboardReport() {
             <div className="chart-section" style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', marginBottom: '30px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
                 <h3 style={{ marginTop: 0, marginBottom: '20px' }}>📈 메뉴별 판매 수량에 따른 순위</h3>
                 <div style={{ width: '100%', height: 300 }}>
-                    {/* 🌟 데이터가 없을 때 차트가 깨지는 것을 방지하는 예외 조건문 추가 */}
                     {chartData.length > 0 ? (
                         <ResponsiveContainer>
                             <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
@@ -298,7 +202,7 @@ function DashboardReport() {
                 <h3>📋 메뉴별 상세 판매 현황</h3>
                 <div className="category-tabs">
                     {availableCategories.map(cat => (
-                        <button 
+                        <button
                             key={cat}
                             className={`tab-btn ${currentCategory === cat ? "active" : ""}`}
                             onClick={() => handleCategoryChange(cat)}
@@ -344,16 +248,16 @@ function DashboardReport() {
             {totalPages > 1 && (
                 <div className="pagination" style={{ textAlign: 'center', marginTop: '20px' }}>
                     {Array.from({ length: totalPages }, (_, i) => (
-                        <button 
-                            key={i} 
-                            style={{ 
-                                padding: '5px 10px', 
-                                margin: '0 4px', 
-                                backgroundColor: currentPage === i + 1 ? '#007bff' : '#fff', 
-                                color: currentPage === i + 1 ? '#fff' : '#000', 
-                                border: '1px solid #ddd', 
-                                borderRadius: '4px', 
-                                cursor: 'pointer' 
+                        <button
+                            key={i}
+                            style={{
+                                padding: '5px 10px',
+                                margin: '0 4px',
+                                backgroundColor: currentPage === i + 1 ? '#007bff' : '#fff',
+                                color: currentPage === i + 1 ? '#fff' : '#000',
+                                border: '1px solid #ddd',
+                                borderRadius: '4px',
+                                cursor: 'pointer'
                             }}
                             onClick={() => setCurrentPage(i + 1)}
                         >

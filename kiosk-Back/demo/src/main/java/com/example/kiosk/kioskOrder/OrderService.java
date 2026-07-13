@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -14,10 +15,16 @@ import com.example.kiosk.kioskOrder.entity.OrderParticular;
 import com.example.kiosk.kioskOrder.repository.OrderMasterRepository;
 import com.example.kiosk.kioskOrder.repository.OrderOptionRepository;
 import com.example.kiosk.kioskOrder.repository.OrderParticularRepository;
+import com.example.kiosk.kioskOrder.repository.projection.DayStatProjection;
+import com.example.kiosk.kioskOrder.repository.projection.HourStatProjection;
+import com.example.kiosk.kioskOrder.repository.projection.MenuStatProjection;
+import com.example.kiosk.kioskOrder.repository.projection.MonthlyStatProjection;
+import com.example.kiosk.kioskOrder.repository.projection.TodayRevenueProjection;
 import com.example.kiosk.kioskMenu.entity.Menu;
 import com.example.kiosk.kioskMenu.entity.ProductOption;
 import com.example.kiosk.kioskMenu.repository.MenuRepository;
 import com.example.kiosk.kioskMenu.repository.ProductOptionRepository;
+
 
 @Service
 @RequiredArgsConstructor
@@ -60,6 +67,40 @@ public class OrderService {
 
         return savedMaster.getId(); 
     }
+
+    public record SalesReportDto(
+        Long totalRevenue,
+        List<MenuStatProjection> menuStats,
+        List<DayStatProjection> dailyStats,
+        List<HourStatProjection> hourlyStats,
+        List<MonthlyStatProjection> monthlyStats,
+        Long todayOrderCount,
+        Long todayTotalRevenue,
+        Long todayPureRevenue
+    ) {}
+
+   @Transactional(readOnly = true)
+        public SalesReportDto getSalesReportSummary() {
+        List<MenuStatProjection> menuStats = orderParticularRepository.getMenuStats();
+        List<DayStatProjection> dailyStats = orderMasterRepository.getDailyStats();
+        List<HourStatProjection> hourlyStats = orderMasterRepository.getHourlyStats();
+        List<MonthlyStatProjection> monthlyStats = orderMasterRepository.getMonthlyStats();
+
+        TodayRevenueProjection today = orderMasterRepository.getTodayRevenue();
+        Long todayPure = orderParticularRepository.getTodayPureRevenue();
+        Long totalRevenue = orderMasterRepository.getTotalRevenue();
+
+        return new SalesReportDto(
+                totalRevenue != null ? totalRevenue : 0L,
+                menuStats,
+                dailyStats,
+                hourlyStats,
+                monthlyStats,
+                today.getOrderCount() != null ? today.getOrderCount() : 0L,
+                today.getRevenue() != null ? today.getRevenue() : 0L,
+                todayPure != null ? todayPure : 0L
+        );
+     }
 
     // 기존의 전체 조회 (필요 시 보존)
     @Transactional(readOnly = true)
@@ -172,7 +213,7 @@ public class OrderService {
             .toList();
     }
 
-    // 💡 getAllOrders와 getActiveOrders에서 중복되는 매핑 로직을 분리한 메서드입니다.
+    // 💡 초기 개발 방식
     /*private List<OrderResponseDto> convertToResponseDtoList(List<OrderMaster> masters) {
         return masters.stream()
                 .map(master -> {

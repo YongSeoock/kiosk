@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.kiosk.kioskOrder.OrderService.SalesReportDto;
+
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
@@ -29,9 +31,14 @@ public class OrderController {
     }
 
     // 전체 조회하여 전체 누적 매출에는 영향이 안가도록 추가
-    @GetMapping("/report")
-    public ResponseEntity<List<OrderResponseDto>> getAllOrders() {
-        return ResponseEntity.ok(orderService.getAllOrders());
+     @GetMapping("/report") public ResponseEntity<List<OrderResponseDto>> getAllOrders() { 
+        return ResponseEntity.ok(orderService.getAllOrders()); 
+    }
+
+    // 매출 관리의 과도한 프론트엔드 부담을 줄이기 위해 /report에 분기를 추가
+    @GetMapping("/report/summary")
+    public ResponseEntity<SalesReportDto> getSalesReportSummary() {
+        return ResponseEntity.ok(orderService.getSalesReportSummary());
     }
 
     // 리액트에서 완료 버튼을 눌렀을 때 호출할 API
