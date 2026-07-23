@@ -27,8 +27,8 @@ function DashboardReport() {
     const todayOptionRevenue = todayTotalRevenue - todayPureRevenue;
     const avgOrderPrice = todayOrderCount > 0 ? Math.round(todayTotalRevenue / todayOrderCount) : 0;
 
-    const dailyStats = summary?.dailyStats ?? [];
-    const hourlyStats = summary?.hourlyStats ?? [];
+    //const dailyStats = summary?.dailyStats ?? [];
+    //const hourlyStats = summary?.hourlyStats ?? [];
     const monthlyStats = summary?.monthlyStats ?? [];
     const monthlyMenuStats = summary?.monthlyMenuStats ?? []; // 월별 메뉴 통계 원본
 
