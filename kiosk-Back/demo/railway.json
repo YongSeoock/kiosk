@@ -1,0 +1,10 @@
+{
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "java -jar target/demo-0.0.1-SNAPSHOT.jar",
+    "healthcheckPath": "/actuator/health",
+    "healthcheckTimeout": 120
+  }
+}
