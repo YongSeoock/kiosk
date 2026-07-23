@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import './dashboardReport.css';
-import ReactMarkdown from 'react-markdown';
 
 function DashboardReport() {
     const [summary, setSummary] = useState(null);
@@ -11,20 +10,15 @@ function DashboardReport() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
+    // 🌟 기간 선택 (전체 / 특정 월) - 드롭다운으로 차트+테이블 동시 제어
+    const [selectedPeriod, setSelectedPeriod] = useState("전체");
+
     useEffect(() => {
         fetch(`${process.env.REACT_APP_API_URL}/api/orders/report/summary`)
             .then(res => res.json())
             .then(data => setSummary(data))
             .catch(err => console.error("데이터 로드 실패:", err));
     }, []);
-
-    // ── 백엔드에서 이미 집계된 값 그대로 사용 (프론트 forEach 계산 제거) ──
-    const allStats = (summary?.menuStats ?? []).map(m => ({
-        name: m.menuName,
-        category: m.category,
-        count: m.count,
-        totalSales: m.totalSales
-    }));
 
     const totalRevenue = summary?.totalRevenue ?? 0;
     const todayOrderCount = summary?.todayOrderCount ?? 0;
@@ -36,8 +30,32 @@ function DashboardReport() {
     const dailyStats = summary?.dailyStats ?? [];
     const hourlyStats = summary?.hourlyStats ?? [];
     const monthlyStats = summary?.monthlyStats ?? [];
+    const monthlyMenuStats = summary?.monthlyMenuStats ?? []; // 월별 메뉴 통계 원본
 
-    // DB에 존재하는 카테고리 종류 동적 추출
+    // 데이터가 존재하는 월 목록 (백엔드에서 이미 오름차순 정렬됨)
+    const availableMonths = monthlyStats.map(m => m.month);
+
+    // ── 전체 메뉴 통계 (원본, KPI '인기 메뉴 1위' 카드는 항상 전체 기준으로 유지) ──
+    const allStatsOverall = (summary?.menuStats ?? []).map(m => ({
+        name: m.menuName,
+        category: m.category,
+        count: m.count,
+        totalSales: m.totalSales
+    }));
+
+    // ── 선택된 기간에 따라 차트/테이블이 사용할 데이터 결정 ──
+    const allStats = selectedPeriod === "전체"
+        ? allStatsOverall
+        : monthlyMenuStats
+            .filter(m => m.month === selectedPeriod)
+            .map(m => ({
+                name: m.menuName,
+                category: m.category,
+                count: m.count,
+                totalSales: m.totalSales
+            }));
+
+    // DB에 존재하는 카테고리 종류 동적 추출 (선택된 기간 데이터 기준)
     const availableCategories = ["전체", ...new Set(allStats.map(item => item.category))];
 
     // 카테고리 필터링 적용
@@ -69,73 +87,17 @@ function DashboardReport() {
         setCurrentPage(1);
     };
 
-    // 인기 메뉴 1위 (판매량 순으로 이미 정렬된 sortedStats 재사용, allStats는 원본 유지)
-    const bestMenu = [...allStats].sort((a, b) => b.count - a.count)[0];
+    // 기간 변경 시 카테고리/페이지 초기화 (다른 기간에서 고른 카테고리가 없을 수 있으므로)
+    const handlePeriodChange = (period) => {
+        setSelectedPeriod(period);
+        setCurrentCategory("전체");
+        setCurrentPage(1);
+    };
+
+    // 인기 메뉴 1위는 항상 전체 기준으로 표시 (KPI 카드는 기간 선택과 무관)
+    const bestMenu = [...allStatsOverall].sort((a, b) => b.count - a.count)[0];
 
     const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
-
-    const [aiAnalysis, setAiAnalysis] = useState("");
-    const [loading, setLoading] = useState(false);
-
-    const handleAiAnalysis = () => {
-        setLoading(true);
-
-        const salesList = allStats.map(item => ({
-            menuName: item.name,
-            category: item.category,
-            price: item.count > 0 ? item.totalSales / item.count : 0,
-            count: item.count
-        }));
-
-        // dailyStats, hourlyStats는 이미 백엔드 summary에서 받아온 값 그대로 사용
-        fetch("http://127.0.0.1:8000/api/v1/kiosk/sales-analysis", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ salesList, dailyStats, hourlyStats })
-        })
-            .then(res => res.json())
-            .then(data => {
-                setAiAnalysis(data.analysis);
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error("AI 분석 실패:", err);
-                setLoading(false);
-            });
-    };
-
-    // AI 시각화를 위한 코드
-    const [forecastData, setForecastData] = useState([]);
-    const [forecastInsight, setForecastInsight] = useState("");
-    const [forecastLoading, setForecastLoading] = useState(false);
-    const [growthRate, setGrowthRate] = useState(0);
-
-    const handleForecast = () => {
-        setForecastLoading(true);
-
-        // monthlyStats도 백엔드 summary에서 받아온 값 그대로 사용
-        const monthlyData = monthlyStats.map(m => ({
-            month: m.month,
-            revenue: m.revenue
-        }));
-
-        fetch("http://127.0.0.1:8000/api/v1/kiosk/sales-forecast", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ monthlyData })
-        })
-            .then(res => res.json())
-            .then(data => {
-                setForecastData(data.forecastData);
-                setForecastInsight(data.insight);
-                setGrowthRate(data.growthRate);
-                setForecastLoading(false);
-            })
-            .catch(err => {
-                console.error("예측 실패:", err);
-                setForecastLoading(false);
-            });
-    };
 
     return (
         <div className="report-container">
@@ -172,9 +134,35 @@ function DashboardReport() {
                 </div>
             </div>
 
+            {/* 🌟 기간 선택 드롭다운 (차트 + 테이블 동시 제어) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                <label htmlFor="period-select" style={{ fontWeight: '600', color: '#333' }}>
+                    📅 조회 기간
+                </label>
+                <select
+                    id="period-select"
+                    value={selectedPeriod}
+                    onChange={(e) => handlePeriodChange(e.target.value)}
+                    style={{
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #ddd',
+                        fontSize: '14px',
+                        cursor: 'pointer'
+                    }}
+                >
+                    <option value="전체">전체</option>
+                    {availableMonths.map(month => (
+                        <option key={month} value={month}>{month}</option>
+                    ))}
+                </select>
+            </div>
+
             {/* 시각화 차트 구역 */}
             <div className="chart-section" style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', marginBottom: '30px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                <h3 style={{ marginTop: 0, marginBottom: '20px' }}>📈 메뉴별 판매 수량에 따른 순위</h3>
+                <h3 style={{ marginTop: 0, marginBottom: '20px' }}>
+                    📈 메뉴별 판매 수량에 따른 순위 {selectedPeriod !== "전체" && `(${selectedPeriod})`}
+                </h3>
                 <div style={{ width: '100%', height: 300 }}>
                     {chartData.length > 0 ? (
                         <ResponsiveContainer>
@@ -191,7 +179,7 @@ function DashboardReport() {
                         </ResponsiveContainer>
                     ) : (
                         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: '#999' }}>
-                            차트를 표시할 판매 데이터가 없습니다.
+                            {selectedPeriod === "전체" ? "차트를 표시할 판매 데이터가 없습니다." : `${selectedPeriod}에 판매 데이터가 없습니다.`}
                         </div>
                     )}
                 </div>
@@ -199,7 +187,7 @@ function DashboardReport() {
 
             {/* 테이블 상단 필터 헤더 구역 */}
             <div className="section-header">
-                <h3>📋 메뉴별 상세 판매 현황</h3>
+                <h3>📋 메뉴별 상세 판매 현황 {selectedPeriod !== "전체" && `(${selectedPeriod})`}</h3>
                 <div className="category-tabs">
                     {availableCategories.map(cat => (
                         <button
@@ -237,7 +225,7 @@ function DashboardReport() {
                     {currentItems.length === 0 && (
                         <tr>
                             <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: '#999' }}>
-                                해당 카테고리에 판매 데이터가 없습니다.
+                                {selectedPeriod === "전체" ? "해당 카테고리에 판매 데이터가 없습니다." : `${selectedPeriod}의 해당 카테고리에 판매 데이터가 없습니다.`}
                             </td>
                         </tr>
                     )}
@@ -264,77 +252,6 @@ function DashboardReport() {
                             {i + 1}
                         </button>
                     ))}
-                </div>
-            )}
-
-            {/* 매출 분석 AI */}
-            <div className="ai-action-bar">
-                <button className="ai-btn ai-btn--primary" onClick={handleAiAnalysis} disabled={loading}>
-                    🤖 {loading ? "분석 중..." : "AI 매출 분석"}
-                </button>
-                <button className="ai-btn ai-btn--secondary" onClick={handleForecast} disabled={forecastLoading}>
-                    📈 {forecastLoading ? "예측 중..." : "매출 예측"}
-                </button>
-            </div>
-
-            {aiAnalysis && (
-                <div className="ai-analysis-box">
-                    <div className="ai-analysis-header">
-                        <div className="ai-analysis-icon">🤖</div>
-                        <span className="ai-analysis-title">AI 매출 분석 결과</span>
-                        <span className="ai-analysis-badge">Gemini 2.5</span>
-                    </div>
-                    <div className="ai-analysis-body">
-                        <ReactMarkdown>{aiAnalysis}</ReactMarkdown>
-                    </div>
-                </div>
-            )}
-
-            {forecastData.length > 0 && (
-                <div className="forecast-section">
-                    <div className="forecast-header">
-                        <h3 className="forecast-title">📈 매출 예측</h3>
-                        <div className="forecast-meta">
-                            <span className="forecast-model-badge">Prophet</span>
-                            <span className={`forecast-growth-badge ${growthRate >= 0 ? 'forecast-growth-badge--up' : 'forecast-growth-badge--down'}`}>
-                                {growthRate >= 0 ? '▲' : '▼'} {Math.abs(growthRate)}%
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="forecast-legend">
-                        <div className="forecast-legend-item">
-                            <span className="forecast-legend-dot forecast-legend-dot--actual"></span>
-                            실측 매출
-                        </div>
-                        <div className="forecast-legend-item">
-                            <span className="forecast-legend-dot forecast-legend-dot--predicted"></span>
-                            예측 매출
-                        </div>
-                    </div>
-
-                    <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={forecastData}>
-                            <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                            <YAxis tick={{ fontSize: 12 }} />
-                            <Tooltip formatter={(value) => `${value.toLocaleString()}원`} />
-                            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                                {forecastData.map((entry, index) => (
-                                    <Cell key={index} fill={entry.isPredicted ? "#fecaca" : "#ef4444"} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-
-                    {forecastInsight && (
-                        <div className="forecast-insight-box">
-                            <span className="forecast-insight-icon">💡</span>
-                            <div className="forecast-insight-text">
-                                <span className="forecast-insight-label">AI Insight</span>
-                                {forecastInsight}
-                            </div>
-                        </div>
-                    )}
                 </div>
             )}
         </div>

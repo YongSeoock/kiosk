@@ -3,6 +3,7 @@ import './adminMain.css';
 import OrderManagement from './orderManagement'; // 1번 컴포넌트 불러오기
 import MenuManagement from './menuManagement';   // 2번 컴포넌트 불러오기
 import DashboardReport from './dashboardReport'; // 3번 컴포넌트 불러오기
+import SalesAnalysis from './salesAnalysis';     // 4번 컴포넌트 (AI 분석 & 예측)
 
 function AdminMain() {
   const [activeTab, setActiveTab] = useState('orders');
@@ -19,6 +20,7 @@ function AdminMain() {
         <button onClick={() => setActiveTab('orders')} className={`category-btn ${activeTab === 'orders' ? 'active' : ''}`}>📋 실시간 주문 관리</button>
         <button onClick={() => setActiveTab('menus')} className={`category-btn ${activeTab === 'menus' ? 'active' : ''}`}>☕ 메뉴 관리</button>
         <button onClick={() => setActiveTab('dashboard')} className={`category-btn ${activeTab === 'dashboard' ? 'active' : ''}`}>📊 매출 통계 리포트</button>
+        <button onClick={() => setActiveTab('analysis')} className={`category-btn ${activeTab === 'analysis' ? 'active' : ''}`}>🤖 AI 분석 &amp; 예측</button>
       </nav>
 
       {/* 🌟 탭 내용 구역: 각 파일에서 컴포넌트를 조립식으로 끼워 넣음 */}
@@ -26,6 +28,7 @@ function AdminMain() {
         {activeTab === 'orders' && <OrderManagement />}
         {activeTab === 'menus' && <MenuManagement />}
         {activeTab === 'dashboard' && <DashboardReport />}
+        {activeTab === 'analysis' && <SalesAnalysis />}
       </main>
     </div>
   );

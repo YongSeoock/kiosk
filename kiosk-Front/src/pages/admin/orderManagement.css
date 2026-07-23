@@ -2,24 +2,23 @@
 .orders-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  column-gap: 20px; 
-  row-gap: 60px;
+  column-gap: 20px;
+  row-gap: 30px;
   padding: 10px;
-  /* 핵심: 모든 카드 높이를 가장 긴 카드에 맞춰 늘림 */
   align-items: stretch;
 }
 
-/* 2. 카드 박스: Flex 컨테이너로 설정 */
+/* 2. 카드 박스: 크기를 완전히 고정 (내용과 무관하게 항상 동일) */
 .order-card {
   border: 1px solid #ddd;
   border-radius: 12px;
   padding: 20px;
   background-color: #ffffff;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  
+
   display: flex;
   flex-direction: column;
-  height: 100%; /* 부모 그리드 높이를 꽉 채움 */
+  height: 360px;   /* 🌟 고정 높이: 모든 카드가 동일한 크기를 갖도록 함 */
   overflow: hidden;
 }
 
@@ -30,20 +29,21 @@
   margin-bottom: 12px;
   padding-bottom: 10px;
   border-bottom: 1px solid #eee;
+  flex-shrink: 0;
 }
 
 .order-card-body {
-  flex-grow: 1; /* 이 영역이 남는 공간을 모두 차지함 */
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0; /* flex 자식이 넘칠 때 스크롤/숨김이 제대로 동작하도록 */
 }
 
 .order-items-list {
   padding: 0;
   margin: 0;
-  flex-grow: 1;
-  overflow-y: auto; /* 메뉴가 너무 많으면 카드 안에서만 스크롤 */
+  overflow: hidden; /* 미리보기 항목만 보여주고 나머지는 숨김 (더보기 버튼으로 확인) */
 }
 
 .order-item-detail {
@@ -59,11 +59,29 @@
   font-style: italic;
 }
 
+/* 🌟 더보기 버튼 */
+.btn-more {
+  margin-top: auto;
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: #007bff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.btn-more:hover {
+  text-decoration: underline;
+}
+
 /* 4. 카드 푸터(총액 + 버튼)를 항상 하단 고정 */
 .order-card-footer {
-  margin-top: auto; /* 핵심: 위쪽 여백을 최대로 밀어내어 버튼을 바닥에 붙임 */
+  margin-top: auto;
   padding-top: 15px;
   border-top: 1px dashed #ccc;
+  flex-shrink: 0;
 }
 
 .order-total-price {
@@ -99,4 +117,72 @@
   border-radius: 8px;
   font-weight: bold;
   cursor: pointer;
+}
+
+/* ────────────────────────────── */
+/* 🌟 더보기 팝업 (모달) 스타일   */
+/* ────────────────────────────── */
+
+.order-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.order-modal {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  width: 90%;
+  max-width: 420px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.order-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  font-size: 1.1rem;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0;
+}
+
+.order-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: #666;
+  line-height: 1;
+}
+
+.order-modal-close:hover {
+  color: #000;
+}
+
+.order-modal-items-list {
+  padding: 0;
+  margin: 0;
+  overflow-y: auto; /* 메뉴가 많아도 팝업 안에서 스크롤 */
+  flex-grow: 1;
+}
+
+.order-modal-footer {
+  margin-top: 16px;
+  padding-top: 15px;
+  border-top: 1px dashed #ccc;
+  flex-shrink: 0;
 }

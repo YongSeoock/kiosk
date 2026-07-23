@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.kiosk.kioskOrder.OrderService.SalesReportDto;
+import com.example.kiosk.kioskOrder.repository.dto.OrderRequestDto;
+import com.example.kiosk.kioskOrder.repository.dto.OrderResponseDto;
 
 @RestController
 @RequestMapping("/api/orders")

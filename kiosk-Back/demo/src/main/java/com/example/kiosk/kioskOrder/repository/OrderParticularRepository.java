@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import com.example.kiosk.kioskOrder.entity.OrderParticular;
 import com.example.kiosk.kioskOrder.repository.projection.MenuStatProjection;
+import com.example.kiosk.kioskOrder.repository.projection.MonthlyMenuStatProjection;
 
 @Repository
 // OrderParticularRepository.java
@@ -39,4 +40,36 @@ public interface OrderParticularRepository extends JpaRepository<OrderParticular
         WHERE DATE(o.created_at) = CURRENT_DATE
         """, nativeQuery = true)
     Long getTodayPureRevenue();
+
+    // 월별 + 메뉴별 판매 통계 전체 (달마다 몇 개씩 팔렸는지, count 내림차순)
+    // 프론트에서 month 기준으로 그룹핑해서 "이 달 클릭 -> 메뉴 리스트" 형태로 쓰면 됨
+    @Query(value = """
+        SELECT TO_CHAR(o.created_at, 'YYYY-MM') AS month,
+               m.name AS menuName,
+               m.category AS category,
+               SUM(op.quantity) AS count,
+               SUM(op.quantity * m.price) AS totalSales
+        FROM order_menu op
+        JOIN orders o ON o.id = op.order_id
+        JOIN menu m ON m.id = op.menu_id
+        GROUP BY TO_CHAR(o.created_at, 'YYYY-MM'), m.id, m.name, m.category
+        ORDER BY month, count DESC
+        """, nativeQuery = true)
+    List<MonthlyMenuStatProjection> getMonthlyMenuStats();
+
+    // 특정 월 하나만 콕 집어서 조회 (드릴다운 클릭 시 이걸 호출해도 됨)
+    @Query(value = """
+        SELECT TO_CHAR(o.created_at, 'YYYY-MM') AS month,
+               m.name AS menuName,
+               m.category AS category,
+               SUM(op.quantity) AS count,
+               SUM(op.quantity * m.price) AS totalSales
+        FROM order_menu op
+        JOIN orders o ON o.id = op.order_id
+        JOIN menu m ON m.id = op.menu_id
+        WHERE TO_CHAR(o.created_at, 'YYYY-MM') = :month
+        GROUP BY m.id, m.name, m.category
+        ORDER BY count DESC
+        """, nativeQuery = true)
+    List<MonthlyMenuStatProjection> getMenuStatsByMonth(@Param("month") String month);
 }

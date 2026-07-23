@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import com.example.kiosk.kioskOrder.entity.OrderMaster;
 import com.example.kiosk.kioskOrder.repository.projection.DayStatProjection;
 import com.example.kiosk.kioskOrder.repository.projection.HourStatProjection;
+import com.example.kiosk.kioskOrder.repository.projection.MonthlyMenuStatProjection;
 import com.example.kiosk.kioskOrder.repository.projection.MonthlyStatProjection;
 import com.example.kiosk.kioskOrder.repository.projection.TodayRevenueProjection;
 
@@ -62,5 +63,5 @@ public interface OrderMasterRepository extends JpaRepository<OrderMaster, Long> 
         ORDER BY month
         """, nativeQuery = true)
     List<MonthlyStatProjection> getMonthlyStats();
-    
+
 }

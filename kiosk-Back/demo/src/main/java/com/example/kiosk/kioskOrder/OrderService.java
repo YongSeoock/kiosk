@@ -15,10 +15,13 @@ import com.example.kiosk.kioskOrder.entity.OrderParticular;
 import com.example.kiosk.kioskOrder.repository.OrderMasterRepository;
 import com.example.kiosk.kioskOrder.repository.OrderOptionRepository;
 import com.example.kiosk.kioskOrder.repository.OrderParticularRepository;
+import com.example.kiosk.kioskOrder.repository.dto.OrderRequestDto;
+import com.example.kiosk.kioskOrder.repository.dto.OrderResponseDto;
 import com.example.kiosk.kioskOrder.repository.projection.DayStatProjection;
 import com.example.kiosk.kioskOrder.repository.projection.HourStatProjection;
 import com.example.kiosk.kioskOrder.repository.projection.MenuStatProjection;
 import com.example.kiosk.kioskOrder.repository.projection.MonthlyStatProjection;
+import com.example.kiosk.kioskOrder.repository.projection.MonthlyMenuStatProjection;
 import com.example.kiosk.kioskOrder.repository.projection.TodayRevenueProjection;
 import com.example.kiosk.kioskMenu.entity.Menu;
 import com.example.kiosk.kioskMenu.entity.ProductOption;
@@ -74,6 +77,7 @@ public class OrderService {
         List<DayStatProjection> dailyStats,
         List<HourStatProjection> hourlyStats,
         List<MonthlyStatProjection> monthlyStats,
+        List<MonthlyMenuStatProjection> monthlyMenuStats, // 🌟 월 클릭 시 그 달 메뉴 랭킹 (드릴다운용)
         Long todayOrderCount,
         Long todayTotalRevenue,
         Long todayPureRevenue
@@ -85,6 +89,7 @@ public class OrderService {
         List<DayStatProjection> dailyStats = orderMasterRepository.getDailyStats();
         List<HourStatProjection> hourlyStats = orderMasterRepository.getHourlyStats();
         List<MonthlyStatProjection> monthlyStats = orderMasterRepository.getMonthlyStats();
+        List<MonthlyMenuStatProjection> monthlyMenuStats = orderParticularRepository.getMonthlyMenuStats();
 
         TodayRevenueProjection today = orderMasterRepository.getTodayRevenue();
         Long todayPure = orderParticularRepository.getTodayPureRevenue();
@@ -96,6 +101,7 @@ public class OrderService {
                 dailyStats,
                 hourlyStats,
                 monthlyStats,
+                monthlyMenuStats,
                 today.getOrderCount() != null ? today.getOrderCount() : 0L,
                 today.getRevenue() != null ? today.getRevenue() : 0L,
                 todayPure != null ? todayPure : 0L
@@ -212,56 +218,4 @@ public class OrderService {
             })
             .toList();
     }
-
-    // 💡 초기 개발 방식
-    /*private List<OrderResponseDto> convertToResponseDtoList(List<OrderMaster> masters) {
-        return masters.stream()
-                .map(master -> {
-                    OrderResponseDto responseDto = new OrderResponseDto(master);
-                    
-                    List<OrderParticular> particulars = orderParticularRepository.findByOrderId(master.getId());
-                    
-                    List<OrderResponseDto.OrderDetailDto> detailDtos = particulars.stream()
-                            .map(part -> {
-                                OrderResponseDto.OrderDetailDto detailDto = new OrderResponseDto.OrderDetailDto();
-                                detailDto.setQuantity(part.getQuantity());
-                                
-                                menuRepository.findById(part.getMenuId()).ifPresent(menu -> {
-                                    detailDto.setMenuName(menu.getName());
-                                    detailDto.setPrice(menu.getPrice());
-                                    detailDto.setCategory(menu.getCategory());
-                                });
-
-                                if (detailDto.getMenuName() == null) {
-                                    detailDto.setMenuName("알 수 없는 메뉴(ID:" + part.getMenuId() + ")");
-                                    detailDto.setPrice(0);
-                                    detailDto.setCategory("기타");
-                                }
-
-                                String realMenuName = menuRepository.findById(part.getMenuId())
-                                        .map(menu -> menu.getName()) 
-                                        .orElse("알 수 없는 메뉴(ID:" + part.getMenuId() + ")");
-                                detailDto.setMenuName(realMenuName);
-                                
-                                List<OrderOption> options = orderOptionRepository.findByOrderMenuId(part.getId());
-                                
-                                String combinedOptions = options.stream()
-                                        .map(opt -> {
-                                            return productOptionRepository.findById(opt.getOptionId())
-                                                    .map(o -> o.getName() + "(+" + opt.getQuantity() + "개)")
-                                                    .orElse("옵션(ID:" + opt.getOptionId() + ")");
-                                        })
-                                        .collect(java.util.stream.Collectors.joining(", "));
-                                
-                                detailDto.setOptions(combinedOptions.isEmpty() ? "선택 옵션 없음" : combinedOptions);
-                                
-                                return detailDto;
-                            })
-                            .toList();
-                    
-                    responseDto.setOrderItems(detailDtos);
-                    return responseDto;
-                })
-                .toList();
-    }*/
 }

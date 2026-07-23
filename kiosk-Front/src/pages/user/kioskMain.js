@@ -158,12 +158,12 @@ function KioskMain() {
     // 나중에 메인으로 돌아와서 띄워줄 영수증 미리 세션에 백업
     sessionStorage.setItem(generatedOrderId, JSON.stringify({ orderData, receiptItems, totalAmount }));
 
-    // 결제 성공 화면 호출
-    const fakePaymentKey = "fake_payment_key_" + new Date().getTime();
-    window.location.href = `/success?paymentKey=${fakePaymentKey}&orderId=${generatedOrderId}&amount=${totalAmount}`;
+    // (결제 성공 화면 호출) 토스 페이먼츠 사용하려면 생략해야함
+    //const fakePaymentKey = "fake_payment_key_" + new Date().getTime();
+    //window.location.href = `/success?paymentKey=${fakePaymentKey}&orderId=${generatedOrderId}&amount=${totalAmount}`;
 
-    // 실제 구동하는 코드 이 부분을 지우고 결제 성공 화면 호출만 하면 테스트할때 편함
-    /*try {
+    // 실제 구동하는 코드 이 부분을 생략하고 (결제 성공 화면 호출) 만 하면 테스트할때 편함
+    try {
       // 🌟 windowTarget 옵션을 삭제하여 안전하게 토스 기본 창으로 결제 요청 진행
       await payment.requestPayment({
         method: "CARD",
@@ -189,7 +189,7 @@ function KioskMain() {
 
       // 결제 실패 화면 호출
       //window.location.href = `/fail?code=${error.code}&message=${encodeURIComponent(error.message)}`;
-    }*/
+    }
   };
 
   const categoryIcons = {

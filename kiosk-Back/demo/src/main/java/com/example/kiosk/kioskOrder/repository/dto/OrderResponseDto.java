@@ -1,4 +1,4 @@
-package com.example.kiosk.kioskOrder;
+package com.example.kiosk.kioskOrder.repository.dto;
 
 import com.example.kiosk.kioskOrder.entity.OrderMaster;
 import lombok.Getter;
