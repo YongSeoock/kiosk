@@ -1,6 +1,5 @@
 package com.example.kiosk.kioskMenu;
 
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -9,9 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
-
 @RestController
-@CrossOrigin(origins = "http://localhost:3000") // 리액트 연동 허용
 @RequestMapping("/api/menus") // 경로 매핑 깔끔하게 정리
 public class MenuController {
 

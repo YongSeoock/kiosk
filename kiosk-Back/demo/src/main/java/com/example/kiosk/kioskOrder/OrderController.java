@@ -13,7 +13,6 @@ import com.example.kiosk.kioskOrder.repository.dto.OrderResponseDto;
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // 프론트엔드와 연결 시 CORS 에러 방지
 public class OrderController {
 
     private final OrderService orderService;
