@@ -3,11 +3,13 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import './dashboardReport.css'; // 기존 스타일(ai-analysis-box, forecast-section 등) 재사용
 import ReactMarkdown from 'react-markdown';
 
+const API_BASE = process.env.REACT_APP_API_URL || '';
+
 function SalesAnalysis() {
     const [summary, setSummary] = useState(null);
 
     useEffect(() => {
-        fetch(`${process.env.REACT_APP_API_URL}/api/orders/report/summary`)
+        fetch(`${API_BASE}/api/orders/report/summary`)
             .then(res => res.json())
             .then(data => setSummary(data))
             .catch(err => console.error("데이터 로드 실패:", err));
@@ -27,9 +29,12 @@ function SalesAnalysis() {
     // ── AI 매출 분석 ──
     const [aiAnalysis, setAiAnalysis] = useState("");
     const [loading, setLoading] = useState(false);
+    const [aiError, setAiError] = useState("");
 
     const handleAiAnalysis = () => {
         setLoading(true);
+        setAiError("");
+        setAiAnalysis("");
 
         const salesList = allStats.map(item => ({
             menuName: item.name,
@@ -38,18 +43,25 @@ function SalesAnalysis() {
             count: item.count
         }));
 
-        fetch("http://127.0.0.1:8000/api/v1/kiosk/sales-analysis", {
+        fetch(`${API_BASE}/api/ai/sales-analysis`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ salesList, dailyStats, hourlyStats })
         })
-            .then(res => res.json())
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error || data.detail || `서버 오류 (${res.status})`);
+                }
+                return data;
+            })
             .then(data => {
-                setAiAnalysis(data.analysis);
+                setAiAnalysis(data.analysis || "");
                 setLoading(false);
             })
             .catch(err => {
                 console.error("AI 분석 실패:", err);
+                setAiError(err.message || "AI 분석 중 오류가 발생했습니다.");
                 setLoading(false);
             });
     };
@@ -59,29 +71,40 @@ function SalesAnalysis() {
     const [forecastInsight, setForecastInsight] = useState("");
     const [forecastLoading, setForecastLoading] = useState(false);
     const [growthRate, setGrowthRate] = useState(0);
+    const [forecastError, setForecastError] = useState("");
 
     const handleForecast = () => {
         setForecastLoading(true);
+        setForecastError("");
+        setForecastData([]);
+        setForecastInsight("");
 
         const monthlyData = monthlyStats.map(m => ({
             month: m.month,
             revenue: m.revenue
         }));
 
-        fetch("http://127.0.0.1:8000/api/v1/kiosk/sales-forecast", {
+        fetch(`${API_BASE}/api/ai/sales-forecast`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ monthlyData })
         })
-            .then(res => res.json())
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error || data.detail || `서버 오류 (${res.status})`);
+                }
+                return data;
+            })
             .then(data => {
-                setForecastData(data.forecastData);
-                setForecastInsight(data.insight);
-                setGrowthRate(data.growthRate);
+                setForecastData(data.forecastData || []);
+                setForecastInsight(data.insight || "");
+                setGrowthRate(data.growthRate || 0);
                 setForecastLoading(false);
             })
             .catch(err => {
                 console.error("예측 실패:", err);
+                setForecastError(err.message || "예측 중 오류가 발생했습니다.");
                 setForecastLoading(false);
             });
     };
@@ -100,9 +123,20 @@ function SalesAnalysis() {
                 </button>
             </div>
 
-            {!aiAnalysis && !forecastData.length && (
+            {!aiAnalysis && !aiError && !forecastData.length && !forecastError && (
                 <div style={{ color: '#999', textAlign: 'center', padding: '40px 0' }}>
                     버튼을 눌러 AI 매출 분석 또는 매출 예측을 실행하세요.
+                </div>
+            )}
+
+            {/* AI 분석 에러 */}
+            {aiError && (
+                <div style={{
+                    marginTop: 20, padding: '16px 20px',
+                    background: '#fef2f2', border: '1px solid #fecaca',
+                    borderRadius: 10, color: '#b91c1c', fontSize: 14
+                }}>
+                    ⚠️ {aiError}
                 </div>
             )}
 
@@ -116,6 +150,17 @@ function SalesAnalysis() {
                     <div className="ai-analysis-body">
                         <ReactMarkdown>{aiAnalysis}</ReactMarkdown>
                     </div>
+                </div>
+            )}
+
+            {/* 예측 에러 */}
+            {forecastError && (
+                <div style={{
+                    marginTop: 20, padding: '16px 20px',
+                    background: '#fef2f2', border: '1px solid #fecaca',
+                    borderRadius: 10, color: '#b91c1c', fontSize: 14
+                }}>
+                    ⚠️ {forecastError}
                 </div>
             )}
 
